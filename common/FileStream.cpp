@@ -1,6 +1,6 @@
 #include "FileStream.h"
 #define MAX_NAL_SIZE 100*1024*1024
-FileStream::FileStream(const std::string fileName)
+FileStream::FileStream(const std::string& fileName)
 {
     if(m_fp.is_open()){
        m_fp.close();
@@ -19,6 +19,7 @@ NALUnit FileStream::getNextNALUnit()
         return {};
     }
     buffer.clear();
+    uint8_t preStartCode = startCode;
     //find next head
     if (!getNALUnitHead(buffer,startCode)) {
         return {};
@@ -27,7 +28,7 @@ NALUnit FileStream::getNextNALUnit()
     for (auto i = 0; i < startCode; i++) {
         buffer.pop_back();
     }
-    return NALUnit(buffer,startCode);
+    return NALUnit(buffer, preStartCode);
 }
 
 NALUnit FileStream::getFirstNALUnit()

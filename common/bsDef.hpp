@@ -59,8 +59,11 @@ public:
     
     TData get() const { return m_data; }
     size_t getBitPos() const {return m_bitPos;}
+    void setBitPos(size_t pos) {m_bitPos = pos;}
     size_t getBitLen() const {return m_bitLen;}
+    void setBitLen(size_t len){ m_bitLen = len;}
     std::vector<uint8_t> getBitData()const {return m_bitData;}
+    void setBitData(std::vector<int8_t>& data) {m_bitData = data;}
 
 private:
     TData m_data;

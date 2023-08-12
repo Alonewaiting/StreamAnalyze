@@ -2238,7 +2238,7 @@ slice_data( )
 void debug_sps(sps_t* sps)
 {
     printf("======= SPS =======\n");
-    printf(" profile_idc : %d \n", sps->profile_idc );
+    printf(" profile_idc : %d \n", sps->profile_idc.get() );
     printf(" constraint_set0_flag : %d \n", sps->constraint_set0_flag.get());
     printf(" constraint_set1_flag : %d \n", sps->constraint_set1_flag.get());
     printf(" constraint_set2_flag : %d \n", sps->constraint_set2_flag.get());

@@ -4,7 +4,7 @@
 #include "CommonDef.h"
 class FileStream {
 public:
-    FileStream(const std::string fileName);
+    FileStream(const std::string& fileName);
     NALUnit getNextNALUnit();
     NALUnit getFirstNALUnit();
     std::string  getFileName() const { return m_fileName; }
