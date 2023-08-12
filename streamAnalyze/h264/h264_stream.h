@@ -26,7 +26,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
-
+#include "bsDef.hpp"
 #include "bs.h"
 #include "h264_sei.h"
 
@@ -42,98 +42,98 @@ using std::vector;
 */
 typedef struct
 {
-    int profile_idc;
-    int constraint_set0_flag;
-    int constraint_set1_flag;
-    int constraint_set2_flag;
-    int constraint_set3_flag;
-    int constraint_set4_flag;
-    int constraint_set5_flag;
-    int reserved_zero_2bits;
-    int level_idc;
-    int seq_parameter_set_id;
-    int chroma_format_idc;
-    int separate_colour_plane_flag;
-    int ChromaArrayType;
-    int bit_depth_luma_minus8;
-    int bit_depth_chroma_minus8;
-    int qpprime_y_zero_transform_bypass_flag;
-    int seq_scaling_matrix_present_flag;
+    BIT(int) profile_idc;
+    BIT(int) constraint_set0_flag;
+    BIT(int) constraint_set1_flag;
+    BIT(int) constraint_set2_flag;
+    BIT(int) constraint_set3_flag;
+    BIT(int) constraint_set4_flag;
+    BIT(int) constraint_set5_flag;
+    BIT(int) reserved_zero_2bits;
+    BIT(int) level_idc;
+    BIT(int) seq_parameter_set_id;
+    BIT(int) chroma_format_idc;
+    BIT(int) separate_colour_plane_flag;
+    BIT(int) ChromaArrayType;
+    BIT(int) bit_depth_luma_minus8;
+    BIT(int) bit_depth_chroma_minus8;
+    BIT(int) qpprime_y_zero_transform_bypass_flag;
+    BIT(int) seq_scaling_matrix_present_flag;
       int seq_scaling_list_present_flag[8];
       int ScalingList4x4[6];
       int UseDefaultScalingMatrix4x4Flag[6];
       int ScalingList8x8[2];
       int UseDefaultScalingMatrix8x8Flag[2];
-    int log2_max_frame_num_minus4;
-    int pic_order_cnt_type;
-      int log2_max_pic_order_cnt_lsb_minus4;
-      int delta_pic_order_always_zero_flag;
-      int offset_for_non_ref_pic;
-      int offset_for_top_to_bottom_field;
-      int num_ref_frames_in_pic_order_cnt_cycle;
+      BIT(int) log2_max_frame_num_minus4;
+      BIT(int) pic_order_cnt_type;
+      BIT(int) log2_max_pic_order_cnt_lsb_minus4;
+      BIT(int) delta_pic_order_always_zero_flag;
+      BIT(int) offset_for_non_ref_pic;
+      BIT(int) offset_for_top_to_bottom_field;
+      BIT(int) num_ref_frames_in_pic_order_cnt_cycle;
       int offset_for_ref_frame[256];
-    int max_num_ref_frames;
-    int gaps_in_frame_num_value_allowed_flag;
-    int pic_width_in_mbs_minus1;
-    int pic_height_in_map_units_minus1;
-    int frame_mbs_only_flag;
-    int mb_adaptive_frame_field_flag;
-    int direct_8x8_inference_flag;
-    int frame_cropping_flag;
-      int frame_crop_left_offset;
-      int frame_crop_right_offset;
-      int frame_crop_top_offset;
-      int frame_crop_bottom_offset;
-    int vui_parameters_present_flag;
+    BIT(int) max_num_ref_frames;
+    BIT(int) gaps_in_frame_num_value_allowed_flag;
+    BIT(int) pic_width_in_mbs_minus1;
+    BIT(int) pic_height_in_map_units_minus1;
+    BIT(int) frame_mbs_only_flag;
+    BIT(int) mb_adaptive_frame_field_flag;
+    BIT(int) direct_8x8_inference_flag;
+    BIT(int) frame_cropping_flag;
+      BIT(int) frame_crop_left_offset;
+      BIT(int) frame_crop_right_offset;
+      BIT(int) frame_crop_top_offset;
+      BIT(int) frame_crop_bottom_offset;
+    BIT(int) vui_parameters_present_flag;
     
     struct
     {
-        int aspect_ratio_info_present_flag;
-          int aspect_ratio_idc;
-            int sar_width;
-            int sar_height;
-        int overscan_info_present_flag;
-          int overscan_appropriate_flag;
-        int video_signal_type_present_flag;
-          int video_format;
-          int video_full_range_flag;
-          int colour_description_present_flag;
-            int colour_primaries;
-            int transfer_characteristics;
-            int matrix_coefficients;
-        int chroma_loc_info_present_flag;
-          int chroma_sample_loc_type_top_field;
-          int chroma_sample_loc_type_bottom_field;
-        int timing_info_present_flag;
-          int num_units_in_tick;
-          int time_scale;
-          int fixed_frame_rate_flag;
-        int nal_hrd_parameters_present_flag;
-        int vcl_hrd_parameters_present_flag;
-          int low_delay_hrd_flag;
-        int pic_struct_present_flag;
-        int bitstream_restriction_flag;
-          int motion_vectors_over_pic_boundaries_flag;
-          int max_bytes_per_pic_denom;
-          int max_bits_per_mb_denom;
-          int log2_max_mv_length_horizontal;
-          int log2_max_mv_length_vertical;
-          int num_reorder_frames;
-          int max_dec_frame_buffering;
+        BIT(int) aspect_ratio_info_present_flag;
+          BIT(int) aspect_ratio_idc;
+            BIT(int) sar_width;
+            BIT(int) sar_height;
+        BIT(int) overscan_info_present_flag;
+          BIT(int) overscan_appropriate_flag;
+        BIT(int) video_signal_type_present_flag;
+          BIT(int) video_format;
+          BIT(int) video_full_range_flag;
+          BIT(int) colour_description_present_flag;
+            BIT(int) colour_primaries;
+            BIT(int) transfer_characteristics;
+            BIT(int) matrix_coefficients;
+        BIT(int) chroma_loc_info_present_flag;
+          BIT(int) chroma_sample_loc_type_top_field;
+          BIT(int) chroma_sample_loc_type_bottom_field;
+        BIT(int) timing_info_present_flag;
+          BIT(int) num_units_in_tick;
+          BIT(int) time_scale;
+          BIT(int) fixed_frame_rate_flag;
+        BIT(int) nal_hrd_parameters_present_flag;
+        BIT(int) vcl_hrd_parameters_present_flag;
+          BIT(int) low_delay_hrd_flag;
+        BIT(int) pic_struct_present_flag;
+        BIT(int) bitstream_restriction_flag;
+          BIT(int) motion_vectors_over_pic_boundaries_flag;
+          BIT(int) max_bytes_per_pic_denom;
+          BIT(int) max_bits_per_mb_denom;
+          BIT(int) log2_max_mv_length_horizontal;
+          BIT(int) log2_max_mv_length_vertical;
+          BIT(int) num_reorder_frames;
+          BIT(int) max_dec_frame_buffering;
     } vui;
 
     struct
     {
-        int cpb_cnt_minus1;
-        int bit_rate_scale;
-        int cpb_size_scale;
+        BIT(int) cpb_cnt_minus1;
+        BIT(int) bit_rate_scale;
+        BIT(int) cpb_size_scale;
           int bit_rate_value_minus1[32]; // up to cpb_cnt_minus1, which is <= 31
           int cpb_size_value_minus1[32];
           int cbr_flag[32];
-        int initial_cpb_removal_delay_length_minus1;
-        int cpb_removal_delay_length_minus1;
-        int dpb_output_delay_length_minus1;
-        int time_offset_length;
+        BIT(int) initial_cpb_removal_delay_length_minus1;
+        BIT(int) cpb_removal_delay_length_minus1;
+        BIT(int) dpb_output_delay_length_minus1;
+        BIT(int) time_offset_length;
     } hrd;
 
 } sps_t;
@@ -148,50 +148,50 @@ typedef struct
 */
 typedef struct 
 {
-    int pic_parameter_set_id;
-    int seq_parameter_set_id;
-    int entropy_coding_mode_flag;
-    int pic_order_present_flag; // 2005版本为此字段名 保留，不影响库本身write的编译，但实际不使用
-    int bottom_field_pic_order_in_frame_present_flag; // 2013版本为此字段名
-    int num_slice_groups_minus1;
-    int slice_group_map_type;
+    BIT(int) pic_parameter_set_id;
+    BIT(int) seq_parameter_set_id;
+    BIT(int) entropy_coding_mode_flag;
+    BIT(int) pic_order_present_flag; // 2005版本为此字段名 保留，不影响库本身write的编译，但实际不使用
+    BIT(int) bottom_field_pic_order_in_frame_present_flag; // 2013版本为此字段名
+    BIT(int) num_slice_groups_minus1;
+    BIT(int) slice_group_map_type;
       int run_length_minus1[8]; // up to num_slice_groups_minus1, which is <= 7 in Baseline and Extended, 0 otheriwse
       int top_left[8];
       int bottom_right[8];
-      int slice_group_change_direction_flag;
-      int slice_group_change_rate_minus1;
-      int pic_size_in_map_units_minus1;
-      int slice_group_id_bytes;
-      vector<int> slice_group_id; // FIXME what size?
-    int num_ref_idx_l0_active_minus1;
-    int num_ref_idx_l1_active_minus1;
-    int weighted_pred_flag;
-    int weighted_bipred_idc;
-    int pic_init_qp_minus26;
-    int pic_init_qs_minus26;
-    int chroma_qp_index_offset;
-    int deblocking_filter_control_present_flag;
-    int constrained_intra_pred_flag;
-    int redundant_pic_cnt_present_flag;
+      BIT(int) slice_group_change_direction_flag;
+      BIT(int) slice_group_change_rate_minus1;
+      BIT(int) pic_size_in_map_units_minus1;
+      BIT(int) slice_group_id_bytes;
+      vector<BIT(int)> slice_group_id; // FIXME what size?
+    BIT(int) num_ref_idx_l0_active_minus1;
+    BIT(int) num_ref_idx_l1_active_minus1;
+    BIT(int) weighted_pred_flag;
+    BIT(int) weighted_bipred_idc;
+    BIT(int) pic_init_qp_minus26;
+    BIT(int) pic_init_qs_minus26;
+    BIT(int) chroma_qp_index_offset;
+    BIT(int) deblocking_filter_control_present_flag;
+    BIT(int) constrained_intra_pred_flag;
+    BIT(int) redundant_pic_cnt_present_flag;
 
     // see if we carry any of the optional headers
-    int _more_rbsp_data_present;
+    BIT(int) _more_rbsp_data_present;
 
-    int transform_8x8_mode_flag;
-    int pic_scaling_matrix_present_flag;
+    BIT(int) transform_8x8_mode_flag;
+    BIT(int) pic_scaling_matrix_present_flag;
        int pic_scaling_list_present_flag[8];
        int* ScalingList4x4[6];
        int UseDefaultScalingMatrix4x4Flag[6];
        int* ScalingList8x8[2];
        int UseDefaultScalingMatrix8x8Flag[2];
-    int second_chroma_qp_index_offset;
+    BIT(int) second_chroma_qp_index_offset;
 } pps_t;
 
 // predictive weight table
 typedef struct
 {
-    int luma_log2_weight_denom;
-    int chroma_log2_weight_denom;
+    BIT(int) luma_log2_weight_denom;
+    BIT(int) chroma_log2_weight_denom;
     int luma_weight_l0_flag[64];
     int luma_weight_l0[64];
     int luma_offset_l0[64];
@@ -209,15 +209,15 @@ typedef struct
 // ref pic list modification
 typedef struct
 {
-    int modification_of_pic_nums_idc;
-    int abs_diff_pic_num_minus1;
-    int long_term_pic_num;
+    BIT(int) modification_of_pic_nums_idc;
+    BIT(int) abs_diff_pic_num_minus1;
+    BIT(int) long_term_pic_num;
 } rplm_tt;
 
 typedef struct
 {
-    int ref_pic_list_modification_flag_l0;
-    int ref_pic_list_modification_flag_l1;
+    BIT(int) ref_pic_list_modification_flag_l0;
+    BIT(int) ref_pic_list_modification_flag_l1;
 
     vector<rplm_tt> rplm;
 } rplm_t;
@@ -225,17 +225,17 @@ typedef struct
 // decoded ref pic marking
 typedef struct
 {
-    int memory_management_control_operation;
-    int difference_of_pic_nums_minus1;
-    int long_term_pic_num;
-    int long_term_frame_idx;
-    int max_long_term_frame_idx_plus1;
+    BIT(int) memory_management_control_operation;
+    BIT(int) difference_of_pic_nums_minus1;
+    BIT(int) long_term_pic_num;
+    BIT(int) long_term_frame_idx;
+    BIT(int) max_long_term_frame_idx_plus1;
 } drpm_tt;
 typedef struct
 {
-    int no_output_of_prior_pics_flag;
-    int long_term_reference_flag;
-    int adaptive_ref_pic_marking_mode_flag;
+    BIT(int) no_output_of_prior_pics_flag;
+    BIT(int) long_term_reference_flag;
+    BIT(int) adaptive_ref_pic_marking_mode_flag;
 
     vector<drpm_tt> drpm;
 } drpm_t;
@@ -249,35 +249,35 @@ typedef struct
 */
 typedef struct
 {
-    int read_slice_type; // see if we only read slice type and return
+    BIT(int) read_slice_type; // see if we only read slice type and return
 
-    int first_mb_in_slice;
-    int slice_type;
-    int pic_parameter_set_id;
-    int colour_plane_id;
-    int frame_num_bytes;
-    int frame_num;
-    int field_pic_flag;
-      int bottom_field_flag;
-    int idr_pic_id;
-    int pic_order_cnt_lsb_bytes;
-    int pic_order_cnt_lsb;
-    int delta_pic_order_cnt_bottom;
+    BIT(int) first_mb_in_slice;
+    BIT(int) slice_type;
+    BIT(int) pic_parameter_set_id;
+    BIT(int) colour_plane_id;
+    BIT(int) frame_num_bytes;
+    BIT(int) frame_num;
+    BIT(int) field_pic_flag;
+      BIT(int) bottom_field_flag;
+    BIT(int) idr_pic_id;
+    BIT(int) pic_order_cnt_lsb_bytes;
+    BIT(int) pic_order_cnt_lsb;
+    BIT(int) delta_pic_order_cnt_bottom;
     int delta_pic_order_cnt[ 2 ];
-    int redundant_pic_cnt;
-    int direct_spatial_mv_pred_flag;
-    int num_ref_idx_active_override_flag;
-    int num_ref_idx_l0_active_minus1;
-    int num_ref_idx_l1_active_minus1;
-    int cabac_init_idc;
-    int slice_qp_delta;
-    int sp_for_switch_flag;
-    int slice_qs_delta;
-    int disable_deblocking_filter_idc;
-    int slice_alpha_c0_offset_div2;
-    int slice_beta_offset_div2;
-    int slice_group_change_cycle_bytes;
-    int slice_group_change_cycle;
+    BIT(int) redundant_pic_cnt;
+    BIT(int) direct_spatial_mv_pred_flag;
+    BIT(int) num_ref_idx_active_override_flag;
+    BIT(int) num_ref_idx_l0_active_minus1;
+    BIT(int) num_ref_idx_l1_active_minus1;
+    BIT(int) cabac_init_idc;
+    BIT(int) slice_qp_delta;
+    BIT(int) sp_for_switch_flag;
+    BIT(int) slice_qs_delta;
+    BIT(int) disable_deblocking_filter_idc;
+    BIT(int) slice_alpha_c0_offset_div2;
+    BIT(int) slice_beta_offset_div2;
+    BIT(int) slice_group_change_cycle_bytes;
+    BIT(int) slice_group_change_cycle;
 
     pwt_t pwt;
     rplm_t rplm;
@@ -294,7 +294,7 @@ typedef struct
 */
 typedef struct
 {
-    int primary_pic_type;
+    BIT(int) primary_pic_type;
 } aud_t;
 
 /**
@@ -306,11 +306,11 @@ typedef struct
 */
 typedef struct
 {
-    int forbidden_zero_bit;
-    int nal_ref_idc;
-    int nal_unit_type;
+    BIT(int) forbidden_zero_bit;
+    BIT(int) nal_ref_idc;
+    BIT(int) nal_unit_type;
     void* parsed; // FIXME
-    int sizeof_parsed;
+    BIT(int) sizeof_parsed;
 
     //uint8_t* rbsp_buf;
     //int rbsp_size;
@@ -318,68 +318,68 @@ typedef struct
 
 typedef struct
 {
-    int _is_initialized;
-    int sps_id;
-    int initial_cpb_removal_delay;
-    int initial_cpb_delay_offset;
+    BIT(int) _is_initialized;
+    BIT(int) sps_id;
+    BIT(int) initial_cpb_removal_delay;
+    BIT(int) initial_cpb_delay_offset;
 } sei_buffering_t;
 
 typedef struct
 {
-    int clock_timestamp_flag;
-        int ct_type;
-        int nuit_field_based_flag;
-        int counting_type;
-        int full_timestamp_flag;
-        int discontinuity_flag;
-        int cnt_dropped_flag;
-        int n_frames;
+    BIT(int) clock_timestamp_flag;
+        BIT(int) ct_type;
+        BIT(int) nuit_field_based_flag;
+        BIT(int) counting_type;
+        BIT(int) full_timestamp_flag;
+        BIT(int) discontinuity_flag;
+        BIT(int) cnt_dropped_flag;
+        BIT(int) n_frames;
 
-        int seconds_value;
-        int minutes_value;
-        int hours_value;
+        BIT(int) seconds_value;
+        BIT(int) minutes_value;
+        BIT(int) hours_value;
 
-        int seconds_flag;
-        int minutes_flag;
-        int hours_flag;
+        BIT(int) seconds_flag;
+        BIT(int) minutes_flag;
+        BIT(int) hours_flag;
 
-        int time_offset;
+        BIT(int) time_offset;
 } picture_timestamp_t;
 
 typedef struct
 {
-  int _is_initialized;
-  int cpb_removal_delay;
-  int dpb_output_delay;
-  int pic_struct;
+  BIT(int) _is_initialized;
+  BIT(int) cpb_removal_delay;
+  BIT(int) dpb_output_delay;
+  BIT(int) pic_struct;
   picture_timestamp_t clock_timestamps[3]; // 3 is the maximum possible value
 } sei_picture_timing_t;
 
 
 typedef struct
 {
-  int rbsp_size;
+  BIT(int) rbsp_size;
   uint8_t* rbsp_buf;
 } slice_data_rbsp_t;
 
 typedef struct
 {
-    int type;           // 0:h264 1:h265
-    int init;
-    int profile_idc;
-    int level_idc;
-    int tier_idc;
-    int width;
-    int height;
-    int crop_left;
-    int crop_right;
-    int crop_top;
-    int crop_bottom;
+    BIT(int) type;           // 0:h264 1:h265
+    BIT(int) init;
+    BIT(int) profile_idc;
+    BIT(int) level_idc;
+    BIT(int) tier_idc;
+    BIT(int) width;
+    BIT(int) height;
+    BIT(int) crop_left;
+    BIT(int) crop_right;
+    BIT(int) crop_top;
+    BIT(int) crop_bottom;
     float max_framerate;  // 由SPS计算得到的帧率，为0表示SPS中没有相应的字段计算
-    int chroma_format_idc;  // YUV颜色空间 0: monochrome 1:420 2:422 3:444
-    int encoding_type;  // 为1表示CABAC 0表示CAVLC
-    int bit_depth_luma;
-    int bit_depth_chroma;
+    BIT(int) chroma_format_idc;  // YUV颜色空间 0: monochrome 1:420 2:422 3:444
+    BIT(int) encoding_type;  // 为1表示CABAC 0表示CAVLC
+    BIT(int) bit_depth_luma;
+    BIT(int) bit_depth_chroma;
 } videoinfo_t;
 
 

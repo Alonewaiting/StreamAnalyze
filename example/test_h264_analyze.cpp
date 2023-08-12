@@ -20,7 +20,7 @@ int main() {
             break;
         }
         read_nal_unit(h, nalunit.getNALUnit().data(), nalunit.getNALUnitSize());
-        switch (h->nal->nal_unit_type)
+        switch (h->nal->nal_unit_type.get())
         {
         case NAL_UNIT_TYPE_SPS: {
             int constraint_byte = h->sps->constraint_set0_flag << 7;
@@ -29,7 +29,7 @@ int main() {
             constraint_byte = h->sps->constraint_set3_flag << 4;
             constraint_byte = h->sps->constraint_set4_flag << 3;
             constraint_byte = h->sps->constraint_set4_flag << 3;
-            std::cout << std::setw(2) << std::setfill('0') << "codec: avc1." << std::hex << h->sps->profile_idc << constraint_byte << h->sps->level_idc << "  ";
+            std::cout << std::setw(2) << std::setfill('0') << "codec: avc1." << std::hex << h->sps->profile_idc.get() << constraint_byte << h->sps->level_idc.get() << "  ";
             debug_sps(h->sps);
         }
         }
