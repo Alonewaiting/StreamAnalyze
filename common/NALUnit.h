@@ -14,6 +14,7 @@ public:
     size_t getStartSize() const { return m_startCode.size(); }
     STREAM_TYPE getStreamType() const { return m_streamType;}
     SLICE_TYPE getSliceType() const {return m_sliceType;}
+    bool isNULL() const { return m_nalUnitData.empty(); }
     uint8_t operator[] (const size_t i) const;
     //使用友元函数 输出运算符重载
     friend std::ostream& operator<<(std::ostream& os, const NALUnit& nal);

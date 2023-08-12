@@ -13,7 +13,7 @@ option(OPENAL_DEMO "open demo" ON)
 set(COMMON_PATH ${CMAKE_SOURCE_DIR}/common)
 set(FORMAT_PATH ${CMAKE_SOURCE_DIR}/format)
 set(PLAYER_PATH ${CMAKE_SOURCE_DIR}/player)
-set(STREAM__ANALYZE_PATH ${CMAKE_SOURCE_DIR}/streamAnalyze)
+set(STREAM_ANALYZE_PATH ${CMAKE_SOURCE_DIR}/streamAnalyze)
 set(STREAM_UI_PATH ${CMAKE_SOURCE_DIR}/streamUI)
 set(UTILS_PATH ${CMAKE_SOURCE_DIR}/utils)
 set(IMGUI_PATH ${CMAKE_SOURCE_DIR}/imgui)
@@ -64,11 +64,25 @@ include(${COMMON_PATH}/common.cmake)
 include_directories(${COMMON_PATH})
 add_src_file(${COMMON_FILE_SRC})
 
-set(NALPARSER_TEST 
-	${PROJECT_SRC_FILES}
-	${CMAKE_SOURCE_DIR}/example/test_nal.cpp
-)
+#stream analyze
+include(${STREAM_ANALYZE_PATH}/streamAnalyze.cmake)
+include_directories(${STREAM_ANALYZE_PATH})
+add_src_file(${STREAM_ANALYZE_FILE_SRC})
+
+
+
 
 if(${OPENAL_DEMO})
+	set(NALPARSER_TEST 
+		${PROJECT_SRC_FILES}
+		${CMAKE_SOURCE_DIR}/example/test_nal.cpp
+	)
 	my_add_executable(test_nal ${NALPARSER_TEST})
+	
+	set(H264ANALYZE_TEST
+		${PROJECT_SRC_FILES}
+		${CMAKE_SOURCE_DIR}/example/test_h264_analyze.cpp
+	)
+	my_add_executable(test_h264_analyze ${H264ANALYZE_TEST})
+	
 endif()
