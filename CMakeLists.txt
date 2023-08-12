@@ -8,6 +8,7 @@ add_definitions(-D _SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING)
 add_definitions(-D __windows__)
 add_definitions(-D _CRT_SECURE_NO_WARNINGS)
 
+option(OPENAL_DEMO "open demo" ON)
 
 set(COMMON_PATH ${CMAKE_SOURCE_DIR}/common)
 set(FORMAT_PATH ${CMAKE_SOURCE_DIR}/format)
@@ -57,3 +58,17 @@ function(my_add_executable)
     endforeach()
     add_executable(${ARGV})
 endfunction(my_add_executable)
+
+#COMMON
+include(${COMMON_PATH}/common.cmake)
+include_directories(${COMMON_PATH})
+add_src_file(${COMMON_FILE_SRC})
+
+set(NALPARSER_TEST 
+	${PROJECT_SRC_FILES}
+	${CMAKE_SOURCE_DIR}/example/test_nal.cpp
+)
+
+if(${OPENAL_DEMO})
+	my_add_executable(test_nal ${NALPARSER_TEST})
+endif()
