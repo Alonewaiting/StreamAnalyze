@@ -25,6 +25,7 @@
 #include <QtWidgets/QSpacerItem>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QTableView>
+#include <QtWidgets/QTextBrowser>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QToolBar>
 #include <QtWidgets/QTreeView>
@@ -53,9 +54,9 @@ public:
     QComboBox *comboBoxStreamType;
     QSpacerItem *horizontalSpacer;
     QGridLayout *gridLayout;
-    QTreeView *treeViewH26X;
     QTableView *tableViewNALU;
-    QTreeView *treeViewHead;
+    QTextBrowser *textBrowserHead;
+    QTreeView *treeViewH26X;
     QHBoxLayout *horizontalLayout;
     QTableView *tableViewBit;
     QTextEdit *textEditBit;
@@ -152,22 +153,22 @@ public:
         gridLayout = new QGridLayout();
         gridLayout->setSpacing(6);
         gridLayout->setObjectName("gridLayout");
-        treeViewH26X = new QTreeView(centralWidget);
-        treeViewH26X->setObjectName("treeViewH26X");
-
-        gridLayout->addWidget(treeViewH26X, 1, 1, 1, 1);
-
         tableViewNALU = new QTableView(centralWidget);
         tableViewNALU->setObjectName("tableViewNALU");
         tableViewNALU->setMinimumSize(QSize(800, 0));
         tableViewNALU->setDragEnabled(true);
 
-        gridLayout->addWidget(tableViewNALU, 0, 0, 2, 1);
+        gridLayout->addWidget(tableViewNALU, 0, 0, 3, 1);
 
-        treeViewHead = new QTreeView(centralWidget);
-        treeViewHead->setObjectName("treeViewHead");
+        textBrowserHead = new QTextBrowser(centralWidget);
+        textBrowserHead->setObjectName("textBrowserHead");
 
-        gridLayout->addWidget(treeViewHead, 0, 1, 1, 1);
+        gridLayout->addWidget(textBrowserHead, 0, 1, 1, 1);
+
+        treeViewH26X = new QTreeView(centralWidget);
+        treeViewH26X->setObjectName("treeViewH26X");
+
+        gridLayout->addWidget(treeViewH26X, 1, 1, 2, 1);
 
         gridLayout->setRowStretch(0, 1);
         gridLayout->setRowStretch(1, 3);

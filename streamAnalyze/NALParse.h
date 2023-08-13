@@ -24,7 +24,8 @@ public:
     int release(void);
     int parseNALU(const NALUnit& vNal);
     std::shared_ptr<TreeList<ParameterDescription>> getRootTree()const { return m_root; }
-
+    void getVideoInfo(videoinfo_t* videoInfo);
+  
 private:
     void h264debugNALU(h264_stream_t* h, nal_t* nal);
     void h264debugSliceHeader(h264_stream_t* h, NALTreeNode& root);
@@ -39,6 +40,7 @@ private:
 
 private:
     h264_stream_t* m_hH264;
+    STREAM_TYPE m_streamType;
     std::shared_ptr<TreeList<ParameterDescription>> m_root;
 };
 #endif

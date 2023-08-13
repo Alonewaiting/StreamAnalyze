@@ -6,9 +6,11 @@
 #include <QStandardItem>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QSettings>
 #include <queue>
+#include <sstream>
 #define DEFUAL_NALU_SIZE 100
-
+#define SETTINGS_NAME "settings.ini"
 enum 
 {
     TABLELINE_NUM=0,
@@ -35,6 +37,8 @@ StreamAnalyzeWidget::StreamAnalyzeWidget(QWidget *parent)
     this->ui.tableViewNALU->horizontalHeader()->setStretchLastSection(true);
     ui.tableViewNALU->setSelectionBehavior(QAbstractItemView::SelectRows);
     connect(this->ui.actionopen,&QAction::triggered,this, &StreamAnalyzeWidget::openFile);
+    connect(this->ui.pushButtonStop ,&QPushButton::clicked, this , &StreamAnalyzeWidget::stopButtonClick);
+    connect(this->ui.pushButtonPlayer, &QPushButton::clicked, this, &StreamAnalyzeWidget::playButtonClick);
     connect(this->ui.tableViewNALU,&QTableView::clicked,this , &StreamAnalyzeWidget::lineClickedParser);
 }
 
@@ -126,6 +130,162 @@ void StreamAnalyzeWidget::parserNal(const NALUnit& nal){
     }
     showNALUTree(tree);
     showNALUBits(nal);
+    videoinfo_t info;
+    m_nalParser->getVideoInfo(&info);
+    //show info.
+    if (info.type.get())
+    {
+        //// profile类型
+        //switch (info.profile_idc.get())
+        //{
+        //case PROFILE_NONE:
+        //    strProfileInfo.Format(_T("None"));
+        //    break;
+        //case PROFILE_MAIN:
+        //    strProfileInfo.Format(_T("Main"));
+        //    break;
+        //case PROFILE_MAIN10:
+        //    strProfileInfo.Format(_T("Main10"));
+        //    break;
+        //case PROFILE_MAINSTILLPICTURE:
+        //    strProfileInfo.Format(_T("Main Still Picture"));
+        //    break;
+        //case PROFILE_MAINREXT:
+        //    strProfileInfo.Format(_T("Main RExt"));
+        //    break;
+        //case PROFILE_HIGHTHROUGHPUTREXT:
+        //    strProfileInfo.Format(_T("High Throughput RExt"));
+        //    break;
+        //default:
+        //    strProfileInfo.Format(_T("Unkown"));
+        //    break;
+        //}
+        //switch (m_cVideoInfo.level_idc)
+        //{
+        //case LEVEL_NONE:
+        //    strLevelInfo.Format(_T("none(%d)"), LEVEL_NONE);
+        //    break;
+        //case LEVEL1:
+        //    strLevelInfo.Format(_T("1(%d)"), LEVEL1);
+        //    break;
+        //case LEVEL2:
+        //    strLevelInfo.Format(_T("2(%d)"), LEVEL2);
+        //    break;
+        //case LEVEL2_1:
+        //    strLevelInfo.Format(_T("2.1(%d)"), LEVEL2_1);
+        //    break;
+        //case LEVEL3:
+        //    strLevelInfo.Format(_T("3(%d)"), LEVEL3);
+        //    break;
+        //case LEVEL3_1:
+        //    strLevelInfo.Format(_T("3.1(%d)"), LEVEL3_1);
+        //    break;
+        //case LEVEL4:
+        //    strLevelInfo.Format(_T("4(%d)"), LEVEL4);
+        //    break;
+        //case LEVEL4_1:
+        //    strLevelInfo.Format(_T("4.1(%d)"), LEVEL4_1);
+        //    break;
+        //case LEVEL5:
+        //    strLevelInfo.Format(_T("5(%d)"), LEVEL5);
+        //    break;
+        //case LEVEL5_1:
+        //    strLevelInfo.Format(_T("5.1(%d)"), LEVEL5_1);
+        //    break;
+        //case LEVEL5_2:
+        //    strLevelInfo.Format(_T("5.2(%d)"), LEVEL5_2);
+        //    break;
+        //case LEVEL6:
+        //    strLevelInfo.Format(_T("6(%d)"), LEVEL6);
+        //    break;
+        //case LEVEL6_1:
+        //    strLevelInfo.Format(_T("6.1(%d)"), LEVEL6_1);
+        //    break;
+        //case LEVEL6_2:
+        //    strLevelInfo.Format(_T("6.2(%d)"), LEVEL6_2);
+        //    break;
+        //case LEVEL8_5:
+        //    strLevelInfo.Format(_T("8.5(%d)"), LEVEL8_5);
+        //    break;
+        //default:
+        //    strLevelInfo.Format(_T("Unkown"));
+        //    break;
+        //}
+        //switch (m_cVideoInfo.tier_idc)
+        //{
+        //case 1:
+        //    strTierInfo.Format(_T("Tier High"));
+        //    break;
+        //case 0:
+        //default:
+        //    strTierInfo.Format(_T("Tier Main"));
+        //    break;
+        //}
+    }
+    else // h264
+    {
+        // profile类型
+        switch (info.profile_idc.get())
+        {
+        case 66:
+            m_strProfileInfo = "Baseline";
+            break;
+        case 77:
+            m_strProfileInfo ="Main";
+            break;
+        case 88:
+            m_strProfileInfo = "Extended";
+            break;
+        case 100:
+            m_strProfileInfo = "High";
+            break;
+        case 110:
+            m_strProfileInfo = "High 10";
+            break;
+        case 122:
+            m_strProfileInfo = "High 422";
+            break;
+        case 144:
+            m_strProfileInfo = "High 444";
+            break;
+        default:
+            m_strProfileInfo = "Unkown";
+            break;
+        }
+        m_strTierInfo.clear();
+        m_strTierInfo = QString("%1").arg(info.level_idc.get());
+    }
+    // common
+    // bit depth
+    m_strBitDepth= QString("Luma bit: %1 \r\n Chroma bit: %2").arg(info.bit_depth_luma.get()).arg(info.bit_depth_chroma.get());
+
+    // chroma format
+    const QString str[] = { QString("monochrome"), QString("YUV420") ,QString("YUV422") ,QString("YUV444") };
+    if (info.chroma_format_idc.get() < 0 || info.chroma_format_idc.get() > 3) {
+        m_strVideoFormat = "Unkown";
+    }
+    else {
+        m_strVideoFormat = str[info.chroma_format_idc.get()];
+    }
+    std::stringstream ss;
+    std::string typeStr = info.type.get() ? "H.265/HEVC" : "H.264/AVC";
+    std::string encodingType = info.encoding_type.get() ? "CABAC" : "CAVLC";
+    ss << typeStr << "File Information\r\n\r\n" <<
+    "Picture Size      \t:" << info.width.get() << "x" << info.height.get() << "\r\n" <<
+    "  - Cropping Left \t: " << info.crop_left.get() << "\r\n" <<
+    "  - Cropping Right \t: " << info.crop_right.get() << "\r\n" <<
+    "  - Cropping Top \t: " << info.crop_top.get() << "\r\n" <<
+    "  - Cropping Bottom \t: " << info.crop_bottom.get() << "\r\n" <<
+    "Video Format \t: "<< m_strVideoFormat.toStdString() << "\r\n" <<
+    m_strBitDepth.toStdString() << "\r\n" <<
+    "Stream Type \t: " << m_strProfileInfo.toStdString() << "Profile @ Level " << m_strLevelInfo.toStdString() << m_strTierInfo.toStdString() << "\r\n" <<
+    "Encoding Type \t: "<< encodingType << "\r\n" <<
+    "Max fps \t\t: " << info.max_framerate <<"\r\n" <<
+    "Frame Count \t: " << "xxx" << "\r\n";
+    QString showEditor = QString::fromStdString(ss.str());
+    ui.textBrowserHead->setPlainText(showEditor);
+    
+
 }
 void StreamAnalyzeWidget::showNALUTree(const std::shared_ptr<TreeList<ParameterDescription>>& tree){
     //BFS
@@ -206,16 +366,27 @@ void StreamAnalyzeWidget::showNALUBits(const NALUnit& nal) {
      this->ui.tableViewBit->horizontalHeader()->setVisible(false);
      this->ui.tableViewBit->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 }
+
 void StreamAnalyzeWidget::openFile() {
+    QString str = QCoreApplication::applicationDirPath();
+    QString iniPath = str + "/" + SETTINGS_NAME;
+    QSettings* settings = new QSettings(iniPath, QSettings::IniFormat);
+    settings->beginGroup("PATH");
+    QString filePath = settings->value("OpenFilePath", ".").toString();
+    settings->endGroup();
      m_filePath = QFileDialog::getOpenFileName(
         this,
         u8"Open File",
-        ".",
+        filePath,
         "h2645 files(*.h26*);;"
         "mov files(*.mov);;"
         "mp4 files(*.mp4);;"
         "All Files (*);;"
     );
+     settings->beginGroup("PATH");
+     settings->setValue("OpenFilePath", m_filePath);
+     settings->endGroup();
+
     this->ui.lineEditFilePath->setText(m_filePath);
     int size =  this->ui.lineEditLength->text().toInt();
     fillNALUTable(size);
@@ -227,5 +398,13 @@ void StreamAnalyzeWidget::lineClickedParser(const QModelIndex& index) {
     }
     parserNal(m_NALUnits[indexNalu]);
   
+    return;
+}
+void StreamAnalyzeWidget::stopButtonClick() {
+    QMessageBox::warning(this, "warning", "Don't click me, I Just a usless button, SB!", QMessageBox::Ok);
+    return;
+}
+void StreamAnalyzeWidget::playButtonClick() {
+    QMessageBox::warning(this, "warning", "Don't click me, I Just a usless button, SB!", QMessageBox::Ok);
     return;
 }
