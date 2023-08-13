@@ -159,6 +159,8 @@ public:
 
         tableViewNALU = new QTableView(centralWidget);
         tableViewNALU->setObjectName("tableViewNALU");
+        tableViewNALU->setMinimumSize(QSize(800, 0));
+        tableViewNALU->setDragEnabled(true);
 
         gridLayout->addWidget(tableViewNALU, 0, 0, 2, 1);
 
@@ -169,8 +171,8 @@ public:
 
         gridLayout->setRowStretch(0, 1);
         gridLayout->setRowStretch(1, 3);
-        gridLayout->setColumnStretch(0, 3);
-        gridLayout->setColumnStretch(1, 1);
+        gridLayout->setColumnStretch(0, 1);
+        gridLayout->setColumnStretch(1, 3);
 
         verticalLayout->addLayout(gridLayout);
 

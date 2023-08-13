@@ -1,9 +1,12 @@
 #include "StreamAnalyzeWidget.h"
+#include "FileStream.h"
+#include "NALParse.h"
+
 #include <QStandardItemModel>
 #include <QStandardItem>
 #include <QMessageBox>
 #include <QFileDialog>
-#include "FileStream.h"
+#include <queue>
 #define DEFUAL_NALU_SIZE 100
 
 enum 
@@ -19,7 +22,7 @@ StreamAnalyzeWidget::StreamAnalyzeWidget(QWidget *parent)
     : QMainWindow(parent)
 {
     ui.setupUi(this);
-    m_model = new QStandardItemModel(this);
+    m_model = new QStandardItemModel(this->ui.tableViewNALU);
     m_model->setHorizontalHeaderItem(TABLELINE_NUM, new QStandardItem("No."));
     m_model->setHorizontalHeaderItem(TABLELINE_OFFSET, new QStandardItem("Offset"));
     m_model->setHorizontalHeaderItem(TABLELINE_LEN, new QStandardItem("Length"));
@@ -28,7 +31,9 @@ StreamAnalyzeWidget::StreamAnalyzeWidget(QWidget *parent)
     m_model->setHorizontalHeaderItem(TABLELINE_INFO, new QStandardItem("Info"));
     this->ui.lineEditLength->setText(QString::number(DEFUAL_NALU_SIZE));
     this->ui.tableViewNALU->setModel(m_model);
+    ui.tableViewNALU->setSelectionBehavior(QAbstractItemView::SelectRows);
     connect(this->ui.actionopen,&QAction::triggered,this, &StreamAnalyzeWidget::openFile);
+    connect(this->ui.tableViewNALU,&QTableView::clicked,this , &StreamAnalyzeWidget::lineClickedParser);
 }
 
 StreamAnalyzeWidget::~StreamAnalyzeWidget()
@@ -66,12 +71,9 @@ void StreamAnalyzeWidget::fillNALUTable(int size){
         default:
             break;
         }
-
-
-
         addTableData(offset,nalUnit.getNALUnitSize(), startCode , nalTypeName,"");
         offset += nalUnit.getNALUnitSize();
-
+        m_NALUnits.push_back(nalUnit);
     }
 
 
@@ -107,17 +109,101 @@ void StreamAnalyzeWidget::addTableData(int64_t offset, int64_t length,const std:
 
 
 }
+void StreamAnalyzeWidget::parserNal(const NALUnit& nal){
+    if (nal.isNULL()) {
+        return;
+    }
+    auto type = nal.getStreamType();
+    if (!m_nalParser) {
+        m_nalParser = std::make_shared<NALParser>(type);
+    }
+    m_nalParser->parseNALU(nal);
+    auto tree = m_nalParser->getRootTree();
+    if (!tree) {
+        return;
+    }
+    showNALUTree(tree);
+}
+void StreamAnalyzeWidget::showNALUTree(const std::shared_ptr<TreeList<ParameterDescription>>& tree){
+    //BFS
+    std::deque<std::shared_ptr<TreeNode<ParameterDescription>>> treeList;
+    std::deque<int> treeLayer;
+    auto treeRoot = tree->getRoot();
+    treeList.push_back(tree->getRoot());
+    int layer = 0;
+    int currentLayer = 0;
+    treeLayer.push_back(layer);
+
+    QStandardItemModel* model = new QStandardItemModel(ui.treeViewH26X);
+
+    model->setHorizontalHeaderLabels(QStringList() << QStringLiteral("Parameter") << QStringLiteral("Value"));
+    //root
+    QStandardItem* rootItem = new QStandardItem(QString::fromStdString(treeRoot->m_treeName));
+    model->appendRow(rootItem);
+    model->setItem(model->indexFromItem(rootItem).row(), 1, new QStandardItem(QStringLiteral("")));
+
+    while (!treeList.empty())
+    {
+        auto node = treeList.front();
+        auto layer = treeLayer.front();
+        if (currentLayer == layer) {
+            //same layer just append data.
+            for (const auto& val : node->m_element.m_pareterDesciption) {
+                QStandardItem* rootFolder = new QStandardItem(QString::fromStdString(val.first));
+                rootItem->appendRow(rootFolder);
+                rootItem->setChild(rootFolder->index().row(), 1, new QStandardItem(QStringLiteral("")));
+            }
+        }
+        else {
+            //different layer create new item
+            auto preRootItem = rootItem;
+            rootItem = new QStandardItem(QString::fromStdString(node->m_treeName));
+            preRootItem->appendRow(rootItem);
+            for (const auto& val : node->m_element.m_pareterDesciption) {
+                QStandardItem* rootFolder = new QStandardItem(QString::fromStdString(val.first));
+                rootItem->appendRow(rootFolder);
+                rootItem->setChild(rootFolder->index().row(), 1, new QStandardItem(QStringLiteral("")));
+            }
+            currentLayer++;
+        }
+
+        treeList.pop_front();
+        treeLayer.pop_front();
+        if (!node->m_children.empty()) {
+            layer++;
+            for (const auto& val : node->m_children) {
+                treeList.push_back(val);
+                treeLayer.push_back(layer);
+            }
+        }
+    }
+
+
+    ui.treeViewH26X->setModel(model);
+    ui.treeViewH26X->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
+
+}
 void StreamAnalyzeWidget::openFile() {
      m_filePath = QFileDialog::getOpenFileName(
         this,
         u8"Open File",
         ".",
-        "h265 files(*.h265);;"
-        "h264 files(*.h264);;"
+        "h2645 files(*.h26*);;"
         "mov files(*.mov);;"
         "mp4 files(*.mp4);;"
+        "All Files (*);;"
     );
     this->ui.lineEditFilePath->setText(m_filePath);
     int size =  this->ui.lineEditLength->text().toInt();
     fillNALUTable(size);
+}
+void StreamAnalyzeWidget::lineClickedParser(const QModelIndex& index) {
+    auto indexNalu = index.row();
+    if (indexNalu >= m_NALUnits.size()) {
+        return;
+    }
+    parserNal(m_NALUnits[indexNalu]);
+  
+    return;
 }
