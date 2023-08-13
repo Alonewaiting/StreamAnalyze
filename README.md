@@ -5,6 +5,8 @@
 ## UI框架
 IMGUI :https://github.com/ocornut/imgui/
 
+QT Support for 6.4.3
+
 
 
 ## 码流支持
