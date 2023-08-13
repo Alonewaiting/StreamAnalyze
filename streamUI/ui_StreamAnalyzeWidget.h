@@ -181,6 +181,7 @@ public:
         horizontalLayout->setObjectName("horizontalLayout");
         tableViewBit = new QTableView(centralWidget);
         tableViewBit->setObjectName("tableViewBit");
+        tableViewBit->setMinimumSize(QSize(700, 0));
 
         horizontalLayout->addWidget(tableViewBit);
 
@@ -194,7 +195,7 @@ public:
 
         horizontalLayout->addWidget(textEditMessage);
 
-        horizontalLayout->setStretch(0, 3);
+        horizontalLayout->setStretch(0, 4);
         horizontalLayout->setStretch(1, 2);
         horizontalLayout->setStretch(2, 2);
 

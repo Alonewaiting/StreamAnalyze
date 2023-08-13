@@ -29,6 +29,7 @@ private:
     void addTableData(int64_t offset, int64_t length, const std::vector<uint8_t>& startCode,const QString& NALType,const QString &info);
     void parserNal(const NALUnit& nal);
     void showNALUTree(const  std::shared_ptr<TreeList<ParameterDescription>> & tree);
+    void showNALUBits(const NALUnit& nal);
 
 private:
     Ui::StreamAnalyzeWidgetClass ui;

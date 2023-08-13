@@ -126,9 +126,16 @@
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,2,2">
+     <layout class="QHBoxLayout" name="horizontalLayout" stretch="4,2,2">
       <item>
-       <widget class="QTableView" name="tableViewBit"/>
+       <widget class="QTableView" name="tableViewBit">
+        <property name="minimumSize">
+         <size>
+          <width>700</width>
+          <height>0</height>
+         </size>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QTextEdit" name="textEditBit"/>

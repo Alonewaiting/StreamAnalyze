@@ -31,6 +31,8 @@ StreamAnalyzeWidget::StreamAnalyzeWidget(QWidget *parent)
     m_model->setHorizontalHeaderItem(TABLELINE_INFO, new QStandardItem("Info"));
     this->ui.lineEditLength->setText(QString::number(DEFUAL_NALU_SIZE));
     this->ui.tableViewNALU->setModel(m_model);
+    this->ui.tableViewNALU->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    this->ui.tableViewNALU->horizontalHeader()->setStretchLastSection(true);
     ui.tableViewNALU->setSelectionBehavior(QAbstractItemView::SelectRows);
     connect(this->ui.actionopen,&QAction::triggered,this, &StreamAnalyzeWidget::openFile);
     connect(this->ui.tableViewNALU,&QTableView::clicked,this , &StreamAnalyzeWidget::lineClickedParser);
@@ -123,6 +125,7 @@ void StreamAnalyzeWidget::parserNal(const NALUnit& nal){
         return;
     }
     showNALUTree(tree);
+    showNALUBits(nal);
 }
 void StreamAnalyzeWidget::showNALUTree(const std::shared_ptr<TreeList<ParameterDescription>>& tree){
     //BFS
@@ -183,6 +186,25 @@ void StreamAnalyzeWidget::showNALUTree(const std::shared_ptr<TreeList<ParameterD
     ui.treeViewH26X->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
 
+}
+void StreamAnalyzeWidget::showNALUBits(const NALUnit& nal) {
+     QStandardItemModel* model = new QStandardItemModel(this->ui.tableViewBit);
+     auto startCode = nal.getStartCode();
+     auto nalUnit = nal.getNALUnit();
+     auto showResult = startCode;
+     showResult.insert(showResult.end(),nalUnit.begin(),nalUnit.end());
+     for (int i = 0; i < showResult.size(); ++i) {
+         auto show = QString("%1").arg(showResult[i], 2, 16, QLatin1Char('0')).toUpper();
+         if (i % 16 == 0) {
+             auto showList = QString("%1").arg(i, 8, 16, QLatin1Char('0')).toUpper();
+             model->setItem(i / 16, 0, new QStandardItem(showList));
+             model->item(i / 16, 0)->setTextAlignment(Qt::AlignCenter);
+         }
+         model->setItem(i / 16, (i % 16) + 1, new QStandardItem(show));
+     }
+     this->ui.tableViewBit->setModel(model);
+     this->ui.tableViewBit->horizontalHeader()->setVisible(false);
+     this->ui.tableViewBit->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 }
 void StreamAnalyzeWidget::openFile() {
      m_filePath = QFileDialog::getOpenFileName(
