@@ -6,10 +6,10 @@
 typedef int NALType;
 class NALUnit {
 public:
-    NALUnit(const std::vector<uint8_t>& data, uint8_t startCodeSize = 4);
-    NALUnit(const uint8_t* data, size_t size, uint8_t startCodeSize = 4);
+    NALUnit(const std::vector<uint8_t>& data, uint8_t startCodeSize = 4, STREAM_TYPE m_streamType = STREAM_TYPE::STREAM_H264);
+    NALUnit(const uint8_t* data, size_t size, uint8_t startCodeSize = 4, STREAM_TYPE m_streamType = STREAM_TYPE::STREAM_H264);
     NALUnit();
-    void init(const uint8_t* data, size_t size, uint8_t startCodeSize = 4);
+    void init(const uint8_t* data, size_t size, uint8_t startCodeSize = 4, STREAM_TYPE m_streamType = STREAM_TYPE::STREAM_H264);
     std::vector<uint8_t> getNALUnit() const { return m_nalUnitData;}
     size_t getNALUnitSize() const { return m_nalUnitData.size() + m_startCode.size();}
     std::vector<uint8_t> getStartCode() const { return m_startCode; }
@@ -18,6 +18,7 @@ public:
     SLICE_TYPE getSliceType() const {return m_sliceType;}
     bool isNULL() const { return m_nalUnitData.empty(); }
     NALType getNALUType()const { return m_nalType; }
+    void setStreamType(const STREAM_TYPE& type){ m_streamType = type;}
     std::string getNALUTypeName() const ;
     uint8_t operator[] (const size_t i) const;
     //使用友元函数 输出运算符重载

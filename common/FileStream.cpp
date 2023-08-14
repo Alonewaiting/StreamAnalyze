@@ -1,4 +1,5 @@
 #include "FileStream.h"
+#include <algorithm>
 #define MAX_NAL_SIZE 100*1024*1024
 FileStream::FileStream(const std::string& fileName)
 {
@@ -6,8 +7,8 @@ FileStream::FileStream(const std::string& fileName)
        m_fp.close();
     }
     m_fp.open(fileName,std::ios::in | std::ios::binary);
-
-
+    m_fileName =  fileName;
+    m_strType = getStreamType();
 }
 //读取单个NALUnit
 NALUnit FileStream::getNextNALUnit()
@@ -28,7 +29,7 @@ NALUnit FileStream::getNextNALUnit()
     for (auto i = 0; i < startCode; i++) {
         buffer.pop_back();
     }
-    return NALUnit(buffer, preStartCode);
+    return NALUnit(buffer, preStartCode, m_strType);
 }
 
 NALUnit FileStream::getFirstNALUnit()
@@ -45,18 +46,32 @@ NALUnit FileStream::getFirstNALUnit()
 
 STREAM_TYPE FileStream::getStreamType()
 {
-    auto nalUnit = getFirstNALUnit();
-    auto nalType = nalUnit[0] & 0x1f;
-    if (nalType > 0 && nalType < 22) {
-        return STREAM_TYPE::STREAM_H264;
+    //todo 
+    //暂时通过文件名判断，如果需要更详细的参考ffmpeg  h264_probe  hevc_probe
+    auto namePos = m_fileName.find_last_of('.');
+    auto strVal = m_fileName.substr(namePos + 1, m_fileName.size() - namePos);
+    std::transform(strVal.begin(), strVal.end(), strVal.begin(), ::toupper);
+    if(strVal == "HEVC" || strVal == "H265"){
+        m_strType = STREAM_TYPE::STREAM_H265;
     }
-    nalType = (nalUnit[0] >> 1) & 0x3f; // 6 bit
-    if (nalType >= 0 && nalType <= 47) // ok
-    {
-        return STREAM_TYPE::STREAM_H265;
+    if (strVal == "H264") {
+        m_strType = STREAM_TYPE::STREAM_H264;
+        
     }
+    return m_strType;
 
-    return STREAM_TYPE::STREAM_NONE;
+    //auto nalUnit = getFirstNALUnit();
+    //auto nalType = nalUnit[0] & 0x1f;
+    //if (nalType > 0 && nalType < 12) {
+    //    return STREAM_TYPE::STREAM_H264;
+    //}
+    //nalType = (nalUnit[0] >> 1) & 0x3f; // 6 bit
+    //if (nalType >= 0 && nalType <= 47) // ok
+    //{
+    //    return STREAM_TYPE::STREAM_H265;
+    //}
+
+    //return STREAM_TYPE::STREAM_NONE;
 }
 
 bool FileStream::getNALUnitHead(std::vector<uint8_t>& buffer, uint8_t& startCode)

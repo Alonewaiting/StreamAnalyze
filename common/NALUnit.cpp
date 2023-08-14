@@ -39,21 +39,21 @@ static const char* const h264_nal_type_name[32] = {
 };
 
 
-NALUnit::NALUnit(const std::vector<uint8_t>& data, uint8_t startCodeSize)
+NALUnit::NALUnit(const std::vector<uint8_t>& data, uint8_t startCodeSize, STREAM_TYPE streamType)
 {
-    init(data.data(),data.size(),startCodeSize);
+    init(data.data(),data.size(),startCodeSize, streamType);
 }
 
-NALUnit::NALUnit(const uint8_t* data, size_t size, uint8_t startCodeSize )
+NALUnit::NALUnit(const uint8_t* data, size_t size, uint8_t startCodeSize , STREAM_TYPE streamType)
 {
-    init(data, size, startCodeSize);
+    init(data, size, startCodeSize, streamType);
 }
 
 NALUnit::NALUnit()
 {
 }
 
-void NALUnit::init(const uint8_t* data, size_t size, uint8_t startCodeSize)
+void NALUnit::init(const uint8_t* data, size_t size, uint8_t startCodeSize, STREAM_TYPE streamType)
 {
     m_nalUnitData.resize(size,0);
     memcpy(m_nalUnitData.data(), data, size);
@@ -63,19 +63,13 @@ void NALUnit::init(const uint8_t* data, size_t size, uint8_t startCodeSize)
     else {
         m_startCode = { 0,0,0,1 };
     }
-    m_nalType = m_nalUnitData[0] & 0x1f;
-    if (m_nalType > 0 && m_nalType < 22) {
-        m_streamType = STREAM_TYPE::STREAM_H264;
-    }else{
-        m_nalType = (m_nalUnitData[0] >> 1) & 0x3f; // 6 bit
-        if (m_nalType >= 0 && m_nalType <= 47) // ok
-        {
-            m_streamType = STREAM_TYPE::STREAM_H265;
-        }
+    m_streamType = streamType;
+    if (m_streamType == STREAM_TYPE::STREAM_H264) {
+        m_nalType = m_nalUnitData[0] & 0x1f;
     }
-    
-    
-    
+    else {
+        m_nalType = (m_nalUnitData[0] >> 1) & 0x3f; // 6 bit
+    }
 }
 
 std::string NALUnit::getNALUTypeName() const

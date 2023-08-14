@@ -87,6 +87,12 @@ if(${OPENAL_DEMO})
 		${CMAKE_SOURCE_DIR}/example/test_h264_analyze.cpp
 	)
 	my_add_executable(test_h264_analyze ${H264ANALYZE_TEST})
+
+	set(H265ANALYZE_TEST
+		${PROJECT_SRC_FILES}
+		${CMAKE_SOURCE_DIR}/example/test_h265_analyze.cpp
+	)
+	my_add_executable(test_h265_analyze ${H265ANALYZE_TEST})
 	
 endif()
 

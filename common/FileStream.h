@@ -28,7 +28,7 @@ private:
 private:
    std::fstream m_fp;
    std::string m_fileName;
-
+   STREAM_TYPE m_strType;
 
 
 };
