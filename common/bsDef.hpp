@@ -2,6 +2,9 @@
 
 #include <stdint.h>
 #include <vector>
+//这个class 是为了记录更多和bit 流相关的信息，
+//这样一来可以直接找到每个参数对应bit 流种的第几位从而在UI上显示
+
 template<class TData>
 class Bit {
 public:

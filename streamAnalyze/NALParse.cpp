@@ -18,15 +18,25 @@
     sprintf(m_outputInfo, m_tmpStore);\
     } while(0)
 
-// ������
+// 树形项
 #define AddTreeItem(para,_item) \
    _item->m_element.m_pareterDesciption.push_back({m_outputInfo,para });
 
+// 树形项
+#define AddTreeItemValueZero(_item) \
+   _item->m_element.m_pareterDesciption.push_back({m_outputInfo,0 });
 
 NALParser::NALParser(STREAM_TYPE streamType) {
-    //just h264
     m_streamType = streamType;
-    m_hH264 = h264_new();
+    m_hH264 = nullptr;
+    m_hH265 = nullptr;
+    if (streamType == STREAM_TYPE::STREAM_H264) {
+       
+        m_hH264 = h264_new();
+    }
+    if (streamType == STREAM_TYPE::STREAM_H265) {
+        m_hH265 = h265_new();
+    }
     
 }
 NALParser::~NALParser() {
@@ -36,11 +46,20 @@ int NALParser::release(void) {
     if (m_hH264) {
         h264_free(m_hH264);
     }
+    if (m_hH265) {
+        h265_free(m_hH265);
+    }
     return 0;
 }
 int NALParser::parseNALU(const NALUnit& vNal) {
-    read_nal_unit(m_hH264, vNal.getNALUnit().data(), vNal.getNALUnitSize());
-    h264debugNALU(m_hH264,m_hH264->nal);
+    if (m_streamType == STREAM_TYPE::STREAM_H264) {
+        read_nal_unit(m_hH264, vNal.getNALUnit().data(), vNal.getNALUnitSize());
+        h264debugNALU(m_hH264, m_hH264->nal);
+    }
+    else if(m_streamType == STREAM_TYPE::STREAM_H265) {
+        h265_read_nal_unit(m_hH265, vNal.getNALUnit().data(), vNal.getNALUnitSize());
+        h265debugNALU(m_hH265,m_hH265->nal);
+    }
     return 0;
 }
 
@@ -50,6 +69,7 @@ void NALParser::getVideoInfo(videoinfo_t* videoInfo)
        memcpy(videoInfo, m_hH264->info, sizeof(videoinfo_t));
     }
     else if (m_streamType == STREAM_TYPE::STREAM_H265) {
+        memcpy(videoInfo, m_hH265->info, sizeof(videoinfo_t));
 
     }
 }
@@ -279,7 +299,7 @@ void NALParser::h264debugSliceHeader(h264_stream_t* h, NALTreeNode& root)
         }
         auto ilwl0 = std::make_shared<TreeNode<ParameterDescription>>("luma_weight_l0()");
         this->m_root->putChild(ilwl0, ipwt);
-        // ��luma��chroma�ֿ���ʾ
+        // 将luma和chroma分开显示
         if (sh->num_ref_idx_l0_active_minus1.get() >= 0)
         {
             my_printf("luma_weight_l0()");
@@ -960,5 +980,1324 @@ void NALParser::h264debugSEI(h264_stream_t* h, NALTreeNode& root)
     }
 
     my_printf("rbsp_trailing_bits()"); AddTreeItem(0, isei);
+}
+
+void NALParser::h265debugNALU(h265_stream_t* h, h265_nal_t* nal)
+{
+    int my_nal_type = -1;
+
+    const char* nal_unit_type_name = NULL;
+
+   
+
+    switch (nal->nal_unit_type)
+    {
+    case NAL_UNIT_VPS:
+        nal_unit_type_name = "Video parameter set";
+        my_nal_type = 0;
+        break;
+    case NAL_UNIT_SPS:
+        nal_unit_type_name = "Sequence parameter set";
+        my_nal_type = 1;
+        break;
+    case NAL_UNIT_PPS:
+        nal_unit_type_name = "Picture parameter set";
+        my_nal_type = 2;
+        break;
+    case NAL_UNIT_AUD:
+        nal_unit_type_name = "Access unit delimiter";
+        my_nal_type = 3;
+        break;
+    case NAL_UNIT_EOS:
+        nal_unit_type_name = "End of sequence";
+        break;
+    case NAL_UNIT_EOB:
+        nal_unit_type_name = "End of bitstream";
+        break;
+    case NAL_UNIT_FILLER_DATA:
+        nal_unit_type_name = "Filler data";
+        break;
+    case NAL_UNIT_PREFIX_SEI:
+    case NAL_UNIT_SUFFIX_SEI:
+        nal_unit_type_name = "Supplemental enhancement information";
+        my_nal_type = 4;
+        break;
+    case NAL_UNIT_CODED_SLICE_TRAIL_N:
+    case NAL_UNIT_CODED_SLICE_TRAIL_R:
+        nal_unit_type_name = "Coded slice segment of a non-TSA, non-STSA trailing picture";
+        my_nal_type = 5;
+        break;
+    case NAL_UNIT_CODED_SLICE_TSA_N:
+    case NAL_UNIT_CODED_SLICE_TSA_R:
+        nal_unit_type_name = "Coded slice segment of a TSA picture";
+        my_nal_type = 5;
+        break;
+    case NAL_UNIT_CODED_SLICE_STSA_N:
+    case NAL_UNIT_CODED_SLICE_STSA_R:
+        nal_unit_type_name = "Coded slice segment of an STSA picture";
+        my_nal_type = 5;
+        break;
+    case NAL_UNIT_CODED_SLICE_RADL_N:
+    case NAL_UNIT_CODED_SLICE_RADL_R:
+        nal_unit_type_name = "Coded slice segment of a RADL picture";
+        my_nal_type = 5;
+        break;
+    case NAL_UNIT_CODED_SLICE_RASL_N:
+    case NAL_UNIT_CODED_SLICE_RASL_R:
+        nal_unit_type_name = "Coded slice segment of a RASL picture";
+        my_nal_type = 5;
+        break;
+    case NAL_UNIT_RESERVED_VCL_N10:
+    case NAL_UNIT_RESERVED_VCL_N12:
+    case NAL_UNIT_RESERVED_VCL_N14:
+        nal_unit_type_name = "Reserved non-IRAP SLNR VCL NAL unit types";
+        my_nal_type = 5;
+        break;
+    case NAL_UNIT_RESERVED_VCL_R11:
+    case NAL_UNIT_RESERVED_VCL_R13:
+    case NAL_UNIT_RESERVED_VCL_R15:
+        nal_unit_type_name = "Reserved non-IRAP sub-layer reference VCL NAL unit types";
+        break;
+    case NAL_UNIT_CODED_SLICE_BLA_W_LP:
+    case NAL_UNIT_CODED_SLICE_BLA_W_RADL:
+    case NAL_UNIT_CODED_SLICE_BLA_N_LP:
+        nal_unit_type_name = "Coded slice segment of a BLA picture";
+        my_nal_type = 5;
+        break;
+    case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
+    case NAL_UNIT_CODED_SLICE_IDR_N_LP:
+        nal_unit_type_name = "Coded slice segment of an IDR picture";
+        my_nal_type = 5;
+        break;
+    case NAL_UNIT_CODED_SLICE_CRA:
+        nal_unit_type_name = "Coded slice segment of a CRA picture";
+        break;
+
+    case NAL_UNIT_RESERVED_IRAP_VCL22:
+    case NAL_UNIT_RESERVED_IRAP_VCL23:
+        nal_unit_type_name = "Reserved IRAP VCL NAL unit types";
+        break;
+    case NAL_UNIT_RESERVED_VCL24:
+    case NAL_UNIT_RESERVED_VCL25:
+    case NAL_UNIT_RESERVED_VCL26:
+    case NAL_UNIT_RESERVED_VCL27:
+    case NAL_UNIT_RESERVED_VCL28:
+    case NAL_UNIT_RESERVED_VCL29:
+    case NAL_UNIT_RESERVED_VCL30:
+    case NAL_UNIT_RESERVED_VCL31:
+        nal_unit_type_name = "Reserved non-IRAP VCL NAL unit types";
+        break;
+    case NAL_UNIT_RESERVED_NVCL41:
+    case NAL_UNIT_RESERVED_NVCL42:
+    case NAL_UNIT_RESERVED_NVCL43:
+    case NAL_UNIT_RESERVED_NVCL44:
+    case NAL_UNIT_RESERVED_NVCL45:
+    case NAL_UNIT_RESERVED_NVCL46:
+    case NAL_UNIT_RESERVED_NVCL47:
+        nal_unit_type_name = "Reserved";
+        break;
+    case NAL_UNIT_UNSPECIFIED_48:
+    case NAL_UNIT_UNSPECIFIED_49:
+    case NAL_UNIT_UNSPECIFIED_50:
+    case NAL_UNIT_UNSPECIFIED_51:
+    case NAL_UNIT_UNSPECIFIED_52:
+    case NAL_UNIT_UNSPECIFIED_53:
+    case NAL_UNIT_UNSPECIFIED_54:
+    case NAL_UNIT_UNSPECIFIED_55:
+    case NAL_UNIT_UNSPECIFIED_56:
+    case NAL_UNIT_UNSPECIFIED_57:
+    case NAL_UNIT_UNSPECIFIED_58:
+    case NAL_UNIT_UNSPECIFIED_59:
+    case NAL_UNIT_UNSPECIFIED_60:
+    case NAL_UNIT_UNSPECIFIED_61:
+    case NAL_UNIT_UNSPECIFIED_62:
+    case NAL_UNIT_UNSPECIFIED_63:
+        nal_unit_type_name = "Unspecified";
+        break;
+    default:
+        nal_unit_type_name = "Unknown";
+        break;
+    }
+    // 根节点
+    this->m_root = std::make_shared<TreeList<ParameterDescription>>("NAL");
+    auto rootNode = this->m_root->getRoot();
+
+    // 根据手册，nal头是一个节点
+    my_printf("nal_unit_header");
+    auto subroot = std::make_shared<TreeNode<ParameterDescription>>("nal_unit_header");
+    this->m_root->putChild(subroot, rootNode);
+
+    my_printf("forbidden_zero_bit: %d (1 bit)", nal->forbidden_zero_bit); AddTreeItemValueZero(subroot);
+    my_printf("nal_unit_type: %d (%s) (6 bits)", nal->nal_unit_type, nal_unit_type_name); AddTreeItemValueZero(subroot);
+    my_printf("nuh_layer_id: %d (6 bits)", nal->nuh_layer_id); AddTreeItemValueZero(subroot);
+    my_printf("nuh_temporal_id_plus1: %d (3 bits)", nal->nuh_temporal_id_plus1); AddTreeItemValueZero(subroot);
+
+    // nal具体的内容也是一个节点
+    if (my_nal_type == 0)
+        h265DebugVps(h->vps, rootNode);
+    else if (my_nal_type == 1)
+        h265DebugSps(h->sps, rootNode);
+    else if (my_nal_type == 2)
+        h265DebugPps(h->pps, rootNode);
+    else if (my_nal_type == 3)
+        h265DebugAud(h->aud, rootNode);
+    else if (my_nal_type == 4)
+        h265DebugSeis(h, rootNode);
+    else if (my_nal_type == 5)
+        h265DebugSliceHeader(h, rootNode);
+}
+
+void NALParser::h265DebugPtl(profile_tier_level_t* ptl, int profilePresentFlag, int max_sub_layers_minus1, NALTreeNode& root)
+{
+}
+
+void NALParser::h265DebugSubLayerHrdParameters(sub_layer_hrd_parameters_t* subhrd, int sub_pic_hrd_params_present_flag, int CpbCnt, int subLayerId, const char* p, NALTreeNode& root)
+{
+}
+
+void NALParser::h265DebugHrdParameters(hrd_parameters_t* hrd, int commonInfPresentFlag, int maxNumSubLayersMinus1, NALTreeNode& root)
+{
+}
+
+void NALParser::h265DebugVps(h265_vps_t* vps, NALTreeNode& root)
+{
+    int i, j;
+    my_printf("video_parameter_set_rbsp()");
+    auto ivps = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(ivps, root);
+
+    my_printf("vps_video_parameter_set_id: %d  (4 bits)", vps->vps_video_parameter_set_id); AddTreeItemValueZero(ivps);
+    my_printf_flag("vps_base_layer_internal_flag", vps->vps_base_layer_internal_flag); AddTreeItemValueZero(ivps);
+    my_printf_flag("vps_base_layer_available_flag", vps->vps_base_layer_available_flag); AddTreeItemValueZero(ivps);
+    my_printf("vps_max_layers_minus1: %d  (6 bits)", vps->vps_max_layers_minus1); AddTreeItemValueZero(ivps);
+    my_printf("vps_max_sub_layers_minus1: %d  (3 bits)", vps->vps_max_sub_layers_minus1); AddTreeItemValueZero(ivps);
+    my_printf_flag("vps_temporal_id_nesting_flag", vps->vps_temporal_id_nesting_flag); AddTreeItemValueZero(ivps);
+    my_printf("vps_reserved_0xffff_16bits: %d  (16 bits)", vps->vps_reserved_0xffff_16bits); AddTreeItemValueZero(ivps);
+    // ptl
+    my_printf("profile_tier_level()");
+    auto iptl = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(iptl, ivps);
+
+    h265DebugPtl(&vps->ptl, 1, vps->vps_max_layers_minus1, iptl);
+
+    my_printf_flag("vps_sub_layer_ordering_info_present_flag", vps->vps_sub_layer_ordering_info_present_flag);
+    AddTreeItemValueZero(ivps);
+
+    if (vps->vps_sub_layer_ordering_info_present_flag)
+    {
+        my_printf("SubLayers");
+        auto isub = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(isub, ivps);
+
+        for (i = (vps->vps_sub_layer_ordering_info_present_flag ? 0 : vps->vps_max_sub_layers_minus1);
+            i <= vps->vps_max_sub_layers_minus1; i++)
+        {
+            my_printf("vps_max_dec_pic_buffering_minus1[%d]: %d  (v bits)", i, vps->vps_max_dec_pic_buffering_minus1[i]); AddTreeItemValueZero(isub);
+            my_printf("vps_max_num_reorder_pics[%d]: %d  (v bits)", i, vps->vps_max_num_reorder_pics[i]); AddTreeItemValueZero(isub);
+            my_printf("vps_max_latency_increase_plus1[%d]: %d  (v bits)", i, vps->vps_max_latency_increase_plus1[i]); AddTreeItemValueZero(isub);
+        }
+    }
+
+    my_printf("vps_max_layer_id: %d  (6 bits)", vps->vps_max_layer_id); AddTreeItemValueZero(ivps);
+    my_printf("vps_num_layer_sets_minus1: %d  (v bits)", vps->vps_num_layer_sets_minus1); AddTreeItemValueZero(ivps);
+    for (i = 1; i <= vps->vps_num_layer_sets_minus1; i++)
+    {
+        for (j = 0; j <= vps->vps_max_layer_id; j++)
+        {
+            my_printf_flag3("layer_id_included_flag", i, j, vps->layer_id_included_flag[i][j]); AddTreeItemValueZero(ivps);
+        }
+    }
+    my_printf_flag("vps_timing_info_present_flag", vps->vps_timing_info_present_flag);
+    auto tipf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(tipf, ivps);
+
+    if (vps->vps_timing_info_present_flag)
+    {
+        my_printf("vps_num_units_in_tick: %d  (32 bits)", vps->vps_num_units_in_tick); AddTreeItemValueZero(tipf);
+        my_printf("vps_time_scale: %d  (32 bits)", vps->vps_time_scale); AddTreeItemValueZero(tipf);
+        my_printf_flag("vps_poc_proportional_to_timing_flag", vps->vps_poc_proportional_to_timing_flag);
+        auto ppttf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(ppttf, tipf);
+
+
+        if (vps->vps_poc_proportional_to_timing_flag)
+        {
+            my_printf("vps_num_ticks_poc_diff_one_minus1: %d  (v bits)", vps->vps_num_ticks_poc_diff_one_minus1); AddTreeItemValueZero(ppttf);
+        }
+        my_printf("vps_num_hrd_parameters: %d  (v bits)", vps->vps_num_hrd_parameters); AddTreeItemValueZero(tipf);
+        for (i = 0; i < vps->vps_num_hrd_parameters; i++)
+        {
+            my_printf("hrd_layer_set_idx[%d]: %d  (v bits)", i, vps->hrd_layer_set_idx[i]); AddTreeItemValueZero(tipf);
+            if (i > 0)
+            {
+                my_printf_flag2("cprms_present_flag", i, vps->cprms_present_flag[i]); AddTreeItemValueZero(tipf);
+            }
+            //  hrd_parameters()
+            h265DebugHrdParameters(&(vps->hrd_parameters), vps->cprms_present_flag[i], vps->vps_max_sub_layers_minus1, tipf);
+        }
+    }
+    my_printf_flag("vps_extension_flag", vps->vps_extension_flag); AddTreeItemValueZero(ivps);
+    if (vps->vps_extension_flag)
+    {
+        // do nothing...
+    }
+
+    my_printf("rbsp_trailing_bits()"); AddTreeItemValueZero(ivps);
+}
+
+void NALParser::h265DebugScalingList(scaling_list_data_t* sld, NALTreeNode& root)
+{
+    my_printf("scaling_list_data()");
+    auto isl = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(isl, root);
+
+    for (int sizeId = 0; sizeId < 4; sizeId++)
+    {
+        for (int matrixId = 0; matrixId < 6; matrixId += (sizeId == 3) ? 3 : 1)
+        {
+            my_printf_flag3("scaling_list_pred_mode_flag", sizeId, matrixId, sld->scaling_list_pred_mode_flag[sizeId][matrixId]);
+            AddTreeItemValueZero(isl);
+            if (!sld->scaling_list_pred_mode_flag[sizeId][matrixId])
+            {
+                my_printf_flag3("scaling_list_pred_matrix_id_delta[%d][%d]: %d  (v bits)", sizeId, matrixId, sld->scaling_list_pred_matrix_id_delta[sizeId][matrixId]);
+                AddTreeItemValueZero(isl);
+            }
+            else
+            {
+                if (sizeId > 1)
+                {
+                    my_printf("scaling_list_dc_coef_minus8[%d][%d]: %d  (v bits)", sizeId, matrixId, sld->scaling_list_dc_coef_minus8[sizeId - 2][matrixId]);
+                    AddTreeItemValueZero(isl);
+                }
+                for (int i = 0; i < sld->coefNum; i++)
+                {
+                    my_printf("ScalingList[%d][%d][%d]: %d  (v bits)", sizeId, matrixId, i, sld->ScalingList[sizeId][matrixId][i]);
+                    AddTreeItemValueZero(isl);
+                }
+            }
+        }
+    }
+}
+
+void NALParser::h265DebugShortTermRefPicSet(h265_sps_t* sps, st_ref_pic_set_t* st, referencePictureSets_t* rps, int stRpsIdx, NALTreeNode& root)
+{
+    my_printf("short_term_ref_pic_set( %d )", stRpsIdx);
+    auto srps = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(srps, root);
+    auto srpsii = srps;
+    if (stRpsIdx != 0)
+    {
+        my_printf_flag("inter_ref_pic_set_prediction_flag", st->inter_ref_pic_set_prediction_flag); AddTreeItemValueZero(srps);
+        auto srpsii = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+
+    }
+    if (st->inter_ref_pic_set_prediction_flag)
+    {
+        my_printf("delta_idx_minus1: %d (v bits)", st->delta_idx_minus1); AddTreeItemValueZero(srpsii);
+        my_printf("delta_rps_sign: %d (1 bit)", st->delta_rps_sign); AddTreeItemValueZero(srpsii);
+        my_printf("abs_delta_rps_minus1: %d (v bits)", st->abs_delta_rps_minus1); AddTreeItemValueZero(srpsii);
+        int rIdx = stRpsIdx - 1 - st->delta_idx_minus1;
+        referencePictureSets_t* rpsRef = &sps->m_RPSList[rIdx];
+        for (int j = 0; j <= rpsRef->m_numberOfPictures; j++)
+        {
+            my_printf_flag2("used_by_curr_pic_flag", j, st->used_by_curr_pic_flag[j]); AddTreeItemValueZero(srpsii);
+            if (!st->used_by_curr_pic_flag[j])
+            {
+                my_printf_flag2("use_delta_flag", j, st->use_delta_flag[j]); AddTreeItemValueZero(srpsii);
+            }
+        }
+    }
+    else
+    {
+        my_printf("num_negative_pics: %d (v bits)", st->num_negative_pics); AddTreeItemValueZero(srpsii);
+        my_printf("num_positive_pics: %d (v bits)", st->num_positive_pics); AddTreeItemValueZero(srpsii);
+        for (int i = 0; i < st->num_negative_pics; i++)
+        {
+            my_printf("delta_poc_s0_minus1[%d]: %d  (v bits)", i, st->delta_poc_s0_minus1[i]); AddTreeItemValueZero(srpsii);
+            my_printf_flag2("used_by_curr_pic_s0_flag", i, st->used_by_curr_pic_s0_flag[i]); AddTreeItemValueZero(srpsii);
+        }
+        for (int i = 0; i < st->num_positive_pics; i++)
+        {
+            my_printf("delta_poc_s1_minus1[%d]: %d (v bits)", i, st->delta_poc_s1_minus1[i]); AddTreeItemValueZero(srpsii);
+            my_printf_flag2("used_by_curr_pic_s1_flag", i, st->used_by_curr_pic_s1_flag[i]); AddTreeItemValueZero(srpsii);
+        }
+    }
+}
+
+void NALParser::h265DebugVuiParameters(vui_parameters_t* vui, int maxNumSubLayersMinus1, NALTreeNode& root)
+{
+    my_printf("vui_parameters()");
+    auto ivp = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(ivp, root);
+
+    my_printf_flag("aspect_ratio_info_present_flag", vui->aspect_ratio_info_present_flag);
+    auto aripf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(aripf, ivp);
+
+    if (vui->aspect_ratio_info_present_flag)
+    {
+        my_printf("aspect_ratio_idc: %d  (8 bits)", vui->aspect_ratio_idc); AddTreeItemValueZero(aripf);
+        if (vui->aspect_ratio_idc == H265_SAR_Extended)
+        {
+            my_printf("sar_width: %d   (16 bits)", vui->sar_width); AddTreeItemValueZero(aripf);
+            my_printf("sar_height: %d  (16 bits)", vui->sar_height); AddTreeItemValueZero(aripf);
+        }
+    }
+    my_printf_flag("overscan_info_present_flag", vui->overscan_info_present_flag);
+    auto oipf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(oipf, ivp);
+
+
+    if (vui->overscan_info_present_flag)
+    {
+        my_printf_flag("overscan_appropriate_flag", vui->overscan_appropriate_flag); AddTreeItemValueZero(oipf);
+    }
+    my_printf_flag("video_signal_type_present_flag", vui->video_signal_type_present_flag);
+
+    auto vstpf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(vstpf, ivp);
+
+
+    if (vui->video_signal_type_present_flag)
+    {
+        my_printf("video_format: %d  (3 bits)", vui->video_format); AddTreeItemValueZero(vstpf);
+        my_printf_flag("video_full_range_flag", vui->video_full_range_flag); AddTreeItemValueZero(vstpf);
+        my_printf_flag("colour_description_present_flag", vui->colour_description_present_flag);
+
+        auto cdpf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(cdpf, vstpf);
+
+
+        if (vui->colour_description_present_flag)
+        {
+            my_printf("colour_primaries: %d  (8 bits)", vui->colour_primaries); AddTreeItemValueZero(cdpf);
+            my_printf("transfer_characteristics: %d  (8 bits)", vui->transfer_characteristics); AddTreeItemValueZero(cdpf);
+            my_printf("matrix_coeffs: %d  (8 bits)", vui->matrix_coeffs); AddTreeItemValueZero(cdpf);
+        }
+    }
+    my_printf_flag("chroma_loc_info_present_flag", vui->chroma_loc_info_present_flag);
+
+    auto clipf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(clipf, ivp);
+    if (vui->chroma_loc_info_present_flag)
+    {
+        my_printf("chroma_sample_loc_type_top_field: %d  (v bits)", vui->chroma_sample_loc_type_top_field);
+        AddTreeItemValueZero(clipf);
+        my_printf("chroma_sample_loc_type_bottom_field: %d  (v bits)", vui->chroma_sample_loc_type_bottom_field);
+        AddTreeItemValueZero(clipf);
+    }
+    my_printf_flag("neutral_chroma_indication_flag", vui->neutral_chroma_indication_flag); AddTreeItemValueZero(ivp);
+    my_printf_flag("field_seq_flag", vui->field_seq_flag); AddTreeItemValueZero(ivp);
+    my_printf_flag("frame_field_info_present_flag", vui->frame_field_info_present_flag); AddTreeItemValueZero(ivp);
+    my_printf_flag("default_display_window_flag", vui->default_display_window_flag);
+
+    auto ddwf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(ddwf, ivp);
+
+    if (vui->default_display_window_flag)
+    {
+        my_printf("def_disp_win_left_offset: %d  (v bits)", vui->def_disp_win_left_offset); AddTreeItemValueZero(ddwf);
+        my_printf("def_disp_win_right_offset: %d  (v bits)", vui->def_disp_win_right_offset); AddTreeItemValueZero(ddwf);
+        my_printf("def_disp_win_top_offset: %d  (v bits)", vui->def_disp_win_top_offset); AddTreeItemValueZero(ddwf);
+        my_printf("def_disp_win_bottom_offset: %d  (v bits)", vui->def_disp_win_bottom_offset); AddTreeItemValueZero(ddwf);
+    }
+    my_printf_flag("vui_timing_info_present_flag", vui->vui_timing_info_present_flag);
+
+    auto vtipf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(vtipf, ivp);
+
+
+    if (vui->vui_timing_info_present_flag)
+    {
+        my_printf("vui_num_units_in_tick: %u  (32 bits)", vui->vui_num_units_in_tick); AddTreeItemValueZero(vtipf);
+        my_printf("vui_time_scale: %u  (32 bits)", vui->vui_time_scale); AddTreeItemValueZero(vtipf);
+        my_printf_flag("vui_poc_proportional_to_timing_flag", vui->vui_poc_proportional_to_timing_flag);
+
+        auto vppttf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(vppttf, vtipf);
+
+        if (vui->vui_poc_proportional_to_timing_flag)
+        {
+            my_printf("vui_num_ticks_poc_diff_one_minus1: %d  (v bits)", vui->vui_num_ticks_poc_diff_one_minus1);
+            AddTreeItemValueZero(vppttf);
+        }
+        my_printf_flag("vui_hrd_parameters_present_flag", vui->vui_hrd_parameters_present_flag);
+        auto vhppf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(vhppf, vtipf);
+
+
+
+        if (vui->vui_hrd_parameters_present_flag)
+        {
+            h265DebugHrdParameters(&vui->hrd_parameters, 1, maxNumSubLayersMinus1, vhppf);
+        }
+    }
+    my_printf_flag("bitstream_restriction_flag", vui->bitstream_restriction_flag);
+
+    auto brf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(brf, vtipf);
+
+    if (vui->bitstream_restriction_flag)
+    {
+        my_printf_flag("tiles_fixed_structure_flag", vui->tiles_fixed_structure_flag); AddTreeItemValueZero(brf);
+        my_printf_flag("motion_vectors_over_pic_boundaries_flag", vui->motion_vectors_over_pic_boundaries_flag); AddTreeItemValueZero(brf);
+        my_printf_flag("restricted_ref_pic_lists_flag", vui->restricted_ref_pic_lists_flag); AddTreeItemValueZero(brf);
+        my_printf("min_spatial_segmentation_idc: %d  (v bits)", vui->min_spatial_segmentation_idc); AddTreeItemValueZero(brf);
+        my_printf("max_bytes_per_pic_denom: %d  (v bits)", vui->max_bytes_per_pic_denom); AddTreeItemValueZero(brf);
+        my_printf("max_bits_per_min_cu_denom: %d  (v bits)", vui->max_bits_per_min_cu_denom); AddTreeItemValueZero(brf);
+        my_printf("log2_max_mv_length_horizontal: %d  (v bits)", vui->log2_max_mv_length_horizontal); AddTreeItemValueZero(brf);
+        my_printf("log2_max_mv_length_vertical: %d  (v bits)", vui->bitstream_restriction_flag); AddTreeItemValueZero(brf);
+    }
+}
+
+void NALParser::h265DebugSps(h265_sps_t* sps, NALTreeNode& root)
+{
+    my_printf("seq_parameter_set_rbsp()");
+    auto isps = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(isps, root);
+
+
+    my_printf("sps_video_parameter_set_id: %d  (4 bits)", sps->sps_video_parameter_set_id); AddTreeItemValueZero(isps);
+    my_printf("sps_max_sub_layers_minus1: %d  (4 bits)", sps->sps_max_sub_layers_minus1); AddTreeItemValueZero(isps);
+    my_printf_flag("sps_temporal_id_nesting_flag", sps->sps_temporal_id_nesting_flag); AddTreeItemValueZero(isps);
+    // ptl
+    my_printf("profile_tier_level()");
+
+    auto iptl = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(iptl, isps);
+
+    h265DebugPtl(&sps->ptl, 1, sps->sps_max_sub_layers_minus1, iptl);
+
+    my_printf("sps_seq_parameter_set_id: %d  (v bits)", sps->sps_seq_parameter_set_id); AddTreeItemValueZero(isps);
+    my_printf("chroma_format_idc: %d  (v bits)", sps->chroma_format_idc); AddTreeItemValueZero(isps);
+    if (sps->chroma_format_idc == 3)
+    {
+        my_printf_flag("separate_colour_plane_flag", sps->separate_colour_plane_flag); AddTreeItemValueZero(isps);
+    }
+    my_printf("pic_width_in_luma_samples: %d  (v bits)", sps->pic_width_in_luma_samples); AddTreeItemValueZero(isps);
+    my_printf("pic_height_in_luma_samples: %d  (v bits)", sps->pic_height_in_luma_samples); AddTreeItemValueZero(isps);
+    my_printf_flag("conformance_window_flag", sps->conformance_window_flag);
+
+    auto cwf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(cwf, isps);
+
+
+    if (sps->conformance_window_flag)
+    {
+        my_printf("conf_win_left_offset: %d  (v bits)", sps->conf_win_left_offset); AddTreeItemValueZero(cwf);
+        my_printf("conf_win_right_offset: %d  (v bits)", sps->conf_win_right_offset); AddTreeItemValueZero(cwf);
+        my_printf("conf_win_top_offset: %d  (v bits)", sps->conf_win_top_offset); AddTreeItemValueZero(cwf);
+        my_printf("conf_win_bottom_offset: %d  (v bits)", sps->conf_win_bottom_offset); AddTreeItemValueZero(cwf);
+    }
+    my_printf("bit_depth_luma_minus8: %d  (v bits)", sps->bit_depth_luma_minus8); AddTreeItemValueZero(isps);
+    my_printf("bit_depth_chroma_minus8: %d  (v bits)", sps->bit_depth_chroma_minus8); AddTreeItemValueZero(isps);
+    my_printf("log2_max_pic_order_cnt_lsb_minus4: %d  (v bits)", sps->log2_max_pic_order_cnt_lsb_minus4); AddTreeItemValueZero(isps);
+    my_printf_flag("sps_sub_layer_ordering_info_present_flag", sps->sps_sub_layer_ordering_info_present_flag); AddTreeItemValueZero(isps);
+    my_printf("SubLayers");
+
+    auto isloripf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(isloripf, isps);
+
+
+    for (int i = (sps->sps_sub_layer_ordering_info_present_flag ? 0 : sps->sps_max_sub_layers_minus1);
+        i <= sps->sps_max_sub_layers_minus1; i++)
+    {
+        my_printf("sps_max_dec_pic_buffering_minus1[%d]: %d  (v bits)", i, sps->sps_max_dec_pic_buffering_minus1[i]); AddTreeItemValueZero(isloripf);
+        my_printf("sps_max_num_reorder_pics[%d]: %d  (v bits)", i, sps->sps_max_num_reorder_pics[i]); AddTreeItemValueZero(isloripf);
+        my_printf("sps_max_latency_increase_plus1[%d]: %d  (v bits)", i, sps->sps_max_latency_increase_plus1[i]); AddTreeItemValueZero(isloripf);
+    }
+    my_printf("log2_min_luma_coding_block_size_minus3: %d  (v bits)", sps->log2_min_luma_coding_block_size_minus3); AddTreeItemValueZero(isps);
+    my_printf("log2_diff_max_min_luma_coding_block_size: %d  (v bits)", sps->log2_diff_max_min_luma_coding_block_size); AddTreeItemValueZero(isps);
+    my_printf("log2_min_luma_transform_block_size_minus2: %d  (v bits)", sps->log2_min_luma_transform_block_size_minus2); AddTreeItemValueZero(isps);
+    my_printf("log2_diff_max_min_luma_transform_block_size: %d  (v bits)", sps->log2_diff_max_min_luma_transform_block_size); AddTreeItemValueZero(isps);
+    my_printf("max_transform_hierarchy_depth_inter: %d  (v bits)", sps->max_transform_hierarchy_depth_inter); AddTreeItemValueZero(isps);
+    my_printf("max_transform_hierarchy_depth_intra: %d  (v bits)", sps->max_transform_hierarchy_depth_intra); AddTreeItemValueZero(isps);
+    my_printf_flag("scaling_list_enabled_flag", sps->scaling_list_enabled_flag);
+
+    auto slef = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(slef, isps);
+
+    if (sps->scaling_list_enabled_flag)
+    {
+        my_printf_flag("sps_scaling_list_data_present_flag", sps->sps_scaling_list_data_present_flag);
+        auto ssldpf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(ssldpf, slef);
+
+        if (sps->sps_scaling_list_data_present_flag)
+        {
+            h265DebugScalingList(&sps->scaling_list_data, ssldpf);
+        }
+    }
+
+    my_printf_flag("amp_enabled_flag", sps->amp_enabled_flag); AddTreeItemValueZero(isps);
+    my_printf_flag("sample_adaptive_offset_enabled_flag", sps->sample_adaptive_offset_enabled_flag); AddTreeItemValueZero(isps);
+    my_printf_flag("pcm_enabled_flag", sps->pcm_enabled_flag);
+
+    auto pef = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(pef, isps);
+
+    if (sps->pcm_enabled_flag)
+    {
+        my_printf("pcm_sample_bit_depth_luma_minus1: %d  (4 bits)", sps->pcm_sample_bit_depth_luma_minus1); AddTreeItemValueZero(pef);
+        my_printf("pcm_sample_bit_depth_chroma_minus1: %d  (4 bits)", sps->pcm_sample_bit_depth_chroma_minus1); AddTreeItemValueZero(pef);
+        my_printf("log2_min_pcm_luma_coding_block_size_minus3: %d  (v bits)", sps->log2_min_pcm_luma_coding_block_size_minus3); AddTreeItemValueZero(pef);
+        my_printf("log2_diff_max_min_pcm_luma_coding_block_size: %d  (v bits)", sps->log2_diff_max_min_pcm_luma_coding_block_size); AddTreeItemValueZero(pef);
+        my_printf_flag("pcm_loop_filter_disabled_flag", sps->pcm_loop_filter_disabled_flag); AddTreeItemValueZero(pef);
+    }
+    my_printf("num_short_term_ref_pic_sets: %d  (v bits)", sps->num_short_term_ref_pic_sets);
+    referencePictureSets_t* rps = NULL;
+    st_ref_pic_set_t* st = NULL;
+    auto nstrps = isps;
+    if (sps->num_short_term_ref_pic_sets > 0)
+    {
+
+        auto nstrps = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(nstrps, isps);
+
+    }
+    for (int i = 0; i < sps->num_short_term_ref_pic_sets; i++)
+    {
+        st = &sps->st_ref_pic_set[i];
+        rps = &sps->m_RPSList[i];
+        h265DebugShortTermRefPicSet(sps, st, rps, i, nstrps);
+    }
+    my_printf_flag("long_term_ref_pics_present_flag", sps->long_term_ref_pics_present_flag);
+    auto ltrppf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(ltrppf, isps);
+
+
+    if (sps->long_term_ref_pics_present_flag)
+    {
+        my_printf("num_long_term_ref_pics_sps: %d  (v bits)", sps->num_long_term_ref_pics_sps);
+        AddTreeItemValueZero(ltrppf);
+        for (int i = 0; i < sps->num_long_term_ref_pics_sps; i++)
+        {
+            my_printf("lt_ref_pic_poc_lsb_sps[%d]: %d  (u %d bits)", i, sps->lt_ref_pic_poc_lsb_sps[i], sps->lt_ref_pic_poc_lsb_sps_bytes);
+            AddTreeItemValueZero(ltrppf);
+            my_printf_flag2("used_by_curr_pic_lt_sps_flag", i, sps->used_by_curr_pic_lt_sps_flag[i]);
+            AddTreeItemValueZero(ltrppf);
+        }
+    }
+    my_printf_flag("sps_temporal_mvp_enabled_flag", sps->sps_temporal_mvp_enabled_flag); AddTreeItemValueZero(isps);
+    my_printf_flag("strong_intra_smoothing_enabled_flag", sps->strong_intra_smoothing_enabled_flag); AddTreeItemValueZero(isps);
+    my_printf_flag("vui_parameters_present_flag", sps->vui_parameters_present_flag);
+
+    auto vppf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(vppf, isps);
+
+    if (sps->vui_parameters_present_flag)
+    {
+        // vui
+        h265DebugVuiParameters(&sps->vui, sps->sps_max_sub_layers_minus1, vppf);
+    }
+    my_printf_flag("sps_extension_present_flag", sps->sps_extension_present_flag);
+
+    auto sepf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(sepf, isps);
+
+    if (sps->sps_extension_present_flag)
+    {
+        my_printf_flag("sps_range_extension_flag", sps->sps_range_extension_flag);
+
+        auto sref = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(sref, sepf);
+
+        if (sps->sps_range_extension_flag)
+        {
+            my_printf_flag("transform_skip_rotation_enabled_flag", sps->sps_range_extension.transform_skip_rotation_enabled_flag); AddTreeItemValueZero(sref);
+            my_printf_flag("transform_skip_context_enabled_flag", sps->sps_range_extension.transform_skip_context_enabled_flag); AddTreeItemValueZero(sref);
+            my_printf_flag("implicit_rdpcm_enabled_flag", sps->sps_range_extension.implicit_rdpcm_enabled_flag); AddTreeItemValueZero(sref);
+            my_printf_flag("explicit_rdpcm_enabled_flag", sps->sps_range_extension.explicit_rdpcm_enabled_flag); AddTreeItemValueZero(sref);
+            my_printf_flag("extended_precision_processing_flag", sps->sps_range_extension.extended_precision_processing_flag); AddTreeItemValueZero(sref);
+            my_printf_flag("intra_smoothing_disabled_flag", sps->sps_range_extension.intra_smoothing_disabled_flag); AddTreeItemValueZero(sref);
+            my_printf_flag("high_precision_offsets_enabled_flag", sps->sps_range_extension.high_precision_offsets_enabled_flag); AddTreeItemValueZero(sref);
+            my_printf_flag("persistent_rice_adaptation_enabled_flag", sps->sps_range_extension.persistent_rice_adaptation_enabled_flag); AddTreeItemValueZero(sref);
+            my_printf_flag("cabac_bypass_alignment_enabled_flag", sps->sps_range_extension.cabac_bypass_alignment_enabled_flag); AddTreeItemValueZero(sref);
+        }
+        my_printf_flag("sps_multilayer_extension_flag", sps->sps_multilayer_extension_flag);
+        auto smef = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(smef, sepf);
+
+
+        if (sps->sps_multilayer_extension_flag)
+        {
+            my_printf_flag("inter_view_mv_vert_constraint_flag", sps->inter_view_mv_vert_constraint_flag);
+            AddTreeItemValueZero(smef);
+        }
+        my_printf_flag("sps_3d_extension_flag", sps->sps_3d_extension_flag); AddTreeItemValueZero(sepf);
+        my_printf("sps_extension_5bits: %d  (5 bits)", sps->sps_extension_5bits); AddTreeItemValueZero(sepf);
+    }
+
+
+    // todo sps_3d_extension_flag
+
+    my_printf("rbsp_trailing_bits()"); AddTreeItemValueZero(isps);
+
+}
+
+void NALParser::h265DebugPps(h265_pps_t* pps, NALTreeNode& root)
+{
+    my_printf("pic_parameter_set_rbsp()");
+    auto ipps = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(ipps, root);
+
+    my_printf("pps_pic_parameter_set_id: %d  (v bits)", pps->pps_pic_parameter_set_id); AddTreeItemValueZero(ipps);
+    my_printf("pps_seq_parameter_set_id: %d  (v bits)", pps->pps_seq_parameter_set_id); AddTreeItemValueZero(ipps);
+    my_printf_flag("dependent_slice_segments_enabled_flag", pps->dependent_slice_segments_enabled_flag); AddTreeItemValueZero(ipps);
+    my_printf_flag("output_flag_present_flag", pps->output_flag_present_flag); AddTreeItemValueZero(ipps);
+    my_printf("num_extra_slice_header_bits: %d  (3 bits)", pps->num_extra_slice_header_bits); AddTreeItemValueZero(ipps);
+    my_printf_flag("sign_data_hiding_enabled_flag", pps->sign_data_hiding_enabled_flag); AddTreeItemValueZero(ipps);
+    my_printf_flag("cabac_init_present_flag", pps->cabac_init_present_flag); AddTreeItemValueZero(ipps);
+    my_printf("num_ref_idx_l0_default_active_minus1: %d  (v bits)", pps->num_ref_idx_l0_default_active_minus1); AddTreeItemValueZero(ipps);
+    my_printf("num_ref_idx_l1_default_active_minus1: %d  (v bits)", pps->num_ref_idx_l1_default_active_minus1); AddTreeItemValueZero(ipps);
+    my_printf("init_qp_minus26: %d  (v bits)", pps->init_qp_minus26); AddTreeItemValueZero(ipps);
+    my_printf_flag("constrained_intra_pred_flag", pps->constrained_intra_pred_flag); AddTreeItemValueZero(ipps);
+    my_printf_flag("transform_skip_enabled_flag", pps->transform_skip_enabled_flag); AddTreeItemValueZero(ipps);
+    my_printf_flag("cu_qp_delta_enabled_flag", pps->cu_qp_delta_enabled_flag);
+
+    auto cqdef = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(cqdef, ipps);
+
+    if (pps->cu_qp_delta_enabled_flag)
+    {
+        my_printf("diff_cu_qp_delta_depth: %d  (v bits)", pps->diff_cu_qp_delta_depth);
+        AddTreeItemValueZero(cqdef);
+    }
+    my_printf("pps_cb_qp_offset: %d  (v bits)", pps->pps_cb_qp_offset); AddTreeItemValueZero(ipps);
+    my_printf("pps_cr_qp_offset: %d  (v bits)", pps->pps_cr_qp_offset); AddTreeItemValueZero(ipps);
+    my_printf_flag("pps_slice_chroma_qp_offsets_present_flag", pps->pps_slice_chroma_qp_offsets_present_flag); AddTreeItemValueZero(ipps);
+    my_printf_flag("weighted_pred_flag", pps->weighted_pred_flag); AddTreeItemValueZero(ipps);
+    my_printf_flag("weighted_bipred_flag", pps->weighted_bipred_flag); AddTreeItemValueZero(ipps);
+    my_printf_flag("transquant_bypass_enabled_flag", pps->transquant_bypass_enabled_flag); AddTreeItemValueZero(ipps);
+    my_printf_flag("tiles_enabled_flag", pps->tiles_enabled_flag);
+
+    auto tef = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(tef, ipps);
+
+    if (pps->tiles_enabled_flag)
+    {
+        my_printf("num_tile_columns_minus1: %d  (v bits)", pps->num_tile_columns_minus1); AddTreeItemValueZero(tef);
+        my_printf("num_tile_rows_minus1: %d  (v bits)", pps->num_tile_rows_minus1); AddTreeItemValueZero(tef);
+        my_printf_flag("uniform_spacing_flag", pps->uniform_spacing_flag);
+
+        auto usf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(usf, tef);
+
+       
+        if (!pps->uniform_spacing_flag)
+        {
+            for (int i = 0; i < pps->num_tile_columns_minus1; i++)
+            {
+                my_printf("column_width_minus1[%d]: %d  (v bits)", i, pps->column_width_minus1[i]); AddTreeItemValueZero(usf);
+            }
+            for (int i = 0; i < pps->num_tile_rows_minus1; i++)
+            {
+                my_printf("row_height_minus1[%d]: %d  (v bits)", i, pps->row_height_minus1[i]); AddTreeItemValueZero(usf);
+            }
+        }
+        my_printf_flag("loop_filter_across_tiles_enabled_flag", pps->loop_filter_across_tiles_enabled_flag); // to check
+        AddTreeItemValueZero(tef);
+    }
+    my_printf_flag("entropy_coding_sync_enabled_flag", pps->entropy_coding_sync_enabled_flag); AddTreeItemValueZero(ipps);
+
+    my_printf_flag("pps_loop_filter_across_slices_enabled_flag", pps->pps_loop_filter_across_slices_enabled_flag); // to check
+    AddTreeItemValueZero(ipps);
+    my_printf_flag("deblocking_filter_control_present_flag", pps->deblocking_filter_control_present_flag);
+
+
+    auto dfcpf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(dfcpf, ipps);
+
+
+    if (pps->deblocking_filter_control_present_flag)
+    {
+        my_printf_flag("deblocking_filter_override_enabled_flag", pps->deblocking_filter_override_enabled_flag);
+        AddTreeItemValueZero(dfcpf);
+        my_printf_flag("pps_deblocking_filter_disabled_flag", pps->pps_deblocking_filter_disabled_flag);
+
+        auto dfdf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(dfdf, dfcpf);
+
+        if (pps->pps_deblocking_filter_disabled_flag)
+        {
+            my_printf("pps_beta_offset_div2: %d  (v bits)", pps->pps_beta_offset_div2); AddTreeItemValueZero(dfdf);
+            my_printf("pps_tc_offset_div2: %d  (v bits)", pps->pps_tc_offset_div2); AddTreeItemValueZero(dfdf);
+        }
+    }
+    my_printf_flag("pps_scaling_list_data_present_flag", pps->pps_scaling_list_data_present_flag);
+
+    auto sldf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(sldf, ipps);
+
+    if (pps->pps_scaling_list_data_present_flag)
+    {
+        // scaling_list_data()
+        h265DebugScalingList(&pps->scaling_list_data, sldf);
+    }
+    my_printf_flag("lists_modification_present_flag", pps->lists_modification_present_flag); AddTreeItemValueZero(ipps);
+    my_printf("log2_parallel_merge_level_minus2: %d  (v bits)", pps->log2_parallel_merge_level_minus2); AddTreeItemValueZero(ipps);
+    my_printf_flag("slice_segment_header_extension_present_flag", pps->slice_segment_header_extension_present_flag); AddTreeItemValueZero(ipps);
+    my_printf_flag("pps_extension_present_flag", pps->pps_extension_present_flag);
+
+    auto epf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(epf, ipps);
+
+    if (pps->pps_extension_present_flag)
+    {
+        my_printf_flag("pps_range_extension_flag", pps->pps_range_extension_flag); AddTreeItemValueZero(epf);
+        auto iref = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(iref, epf);
+
+
+        if (pps->pps_range_extension_flag)
+        {
+            if (pps->transform_skip_enabled_flag)
+            {
+                my_printf("log2_max_transform_skip_block_size_minus2: %d  (v bits)", pps->pps_range_extension.log2_max_transform_skip_block_size_minus2);
+                AddTreeItemValueZero(iref);
+            }
+            my_printf_flag("cross_component_prediction_enabled_flag", pps->pps_range_extension.cross_component_prediction_enabled_flag); AddTreeItemValueZero(iref);
+            my_printf_flag("chroma_qp_offset_list_enabled_flag", pps->pps_range_extension.chroma_qp_offset_list_enabled_flag); AddTreeItemValueZero(iref);
+            if (pps->pps_range_extension.chroma_qp_offset_list_enabled_flag)
+            {
+                my_printf("diff_cu_chroma_qp_offset_depth: %d  (v bits)", pps->pps_range_extension.diff_cu_chroma_qp_offset_depth); AddTreeItemValueZero(iref);
+                my_printf("chroma_qp_offset_list_len_minus1: %d  (v bits)", pps->pps_range_extension.chroma_qp_offset_list_len_minus1); AddTreeItemValueZero(iref);
+                for (int i = 0; i < pps->pps_range_extension.chroma_qp_offset_list_len_minus1; i++)
+                {
+                    my_printf("cb_qp_offset_list[%d]: %d  (v bits)", i, pps->pps_range_extension.cb_qp_offset_list[i]); AddTreeItemValueZero(iref);
+                    my_printf("cr_qp_offset_list[%d]: %d  (v bits)", i, pps->pps_range_extension.cb_qp_offset_list[i]); AddTreeItemValueZero(iref);
+                }
+            }
+            my_printf("log2_sao_offset_scale_luma: %d  (v bits)", pps->pps_range_extension.log2_sao_offset_scale_luma); AddTreeItemValueZero(iref);
+            my_printf("log2_sao_offset_scale_chroma: %d  (v bits)", pps->pps_range_extension.log2_sao_offset_scale_chroma); AddTreeItemValueZero(iref);
+        }
+        my_printf_flag("pps_multilayer_extension_flag", pps->pps_multilayer_extension_flag); AddTreeItemValueZero(epf);
+        my_printf_flag("pps_3d_extension_flag", pps->pps_3d_extension_flag); AddTreeItemValueZero(epf);
+        my_printf("pps_extension_5bits: %d  (5 bits)", pps->pps_extension_5bits); AddTreeItemValueZero(epf);
+    }
+
+    if (pps->pps_multilayer_extension_flag)
+    {
+        // todo...
+    }
+    if (pps->pps_3d_extension_flag)
+    {
+        // todo...
+    }
+
+    my_printf("rbsp_trailing_bits()"); AddTreeItemValueZero(ipps);
+
+}
+
+void NALParser::h265DebugAud(h265_aud_t* aud, NALTreeNode& root)
+{
+    const char* pic_type = NULL;
+
+    my_printf("access_unit_delimiter_rbsp()");
+    auto iaud = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(iaud, root);
+
+
+    switch (aud->pic_type)
+    {
+    case H265_AUD_PRIMARY_PIC_TYPE_I:    pic_type = "I"; break;
+    case H265_AUD_PRIMARY_PIC_TYPE_IP:   pic_type = "P, I"; break;
+    case H265_AUD_PRIMARY_PIC_TYPE_IPB:  pic_type = "B, P, I"; break;
+    default: pic_type = "Unknown"; break;
+    }
+    my_printf("pic_type: %d ( %s )", aud->pic_type, pic_type); AddTreeItemValueZero(iaud);
+    my_printf("rbsp_trailing_bits()"); AddTreeItemValueZero(root);
+}
+
+void NALParser::h265DebugSeis(h265_stream_t* h, NALTreeNode& root)
+{
+    h265_sei_t** seis = h->seis;
+    int num_seis = h->num_seis;
+    const char* sei_type_name = NULL;
+    int i;
+
+    my_printf("sei_rbsp()");
+    auto isei = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(isei, root);
+
+    my_printf("sei_message()");
+
+    auto iisei = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(iisei, isei);
+
+    for (i = 0; i < num_seis; i++)
+    {
+        h265_sei_t* s = seis[i];
+        my_printf("payloadType: %d  (v bits)", s->payloadType); AddTreeItemValueZero(iisei);
+        my_printf("payloadSize: %d  (v bits)", s->payloadSize); AddTreeItemValueZero(iisei);
+        my_printf("sei_payload()");
+        auto sp = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(sp, iisei);
+
+
+        if (h->nal->nal_unit_type == NAL_UNIT_PREFIX_SEI)
+        {
+            switch (s->payloadType)
+            {
+            case 0:
+                my_printf("buffering_period()"); AddTreeItemValueZero(sp);
+                break;
+            case 1:
+                my_printf("pic_timing()"); AddTreeItemValueZero(sp);
+                break;
+            case 2:
+                my_printf("pan_scan_rect()"); AddTreeItemValueZero(sp);
+                break;
+            case 3:
+                my_printf("filler_payload()"); AddTreeItemValueZero(sp);
+                break;
+            case 4:
+                my_printf("user_data_registered_itu_t_t35()"); AddTreeItemValueZero(sp);
+                break;
+            case 5:
+            {
+                my_printf("user_data_unregistered()"); AddTreeItemValueZero(sp);
+                char uuid[64] = { 0 };
+                char tmp[8] = { 0 };
+                for (int j = 0; j < 16; j++)
+                {
+                    sprintf(tmp, "%X", s->payload[j]);
+                    strcat(uuid, tmp);
+                }
+                my_printf("uuid_iso_iec_11578: %s", uuid);
+
+                auto udpb = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+                this->m_root->putChild(udpb, sp);
+
+             
+                for (int j = 16; j < s->payloadSize; j++)
+                {
+                    my_printf("user_data_payload_byte: %d('%c')", s->payload[j], s->payload[j]);
+                    AddTreeItemValueZero(sp);
+                }
+            }
+            break;
+            case 6:
+                my_printf("recovery_point()"); AddTreeItemValueZero(sp);
+                break;
+            case 9:
+                my_printf("scene_info()"); AddTreeItemValueZero(sp);
+                break;
+            case 15:
+                my_printf("picture_snapshot()"); AddTreeItemValueZero(sp);
+                break;
+            case 16:
+                my_printf("progressive_refinement_segment_start()"); AddTreeItemValueZero(sp);
+                break;
+            case 17:
+                my_printf("progressive_refinement_segment_end()"); AddTreeItemValueZero(sp);
+                break;
+            default:
+                my_printf("reserved_sei_message()"); AddTreeItemValueZero(sp);
+                break;
+            }
+        }
+        else if (h->nal->nal_unit_type == NAL_UNIT_SUFFIX_SEI)
+        {
+            switch (s->payloadType)
+            {
+            case 3:
+                my_printf("filler_payload()"); AddTreeItemValueZero(sp);
+                break;
+            case 4:
+                my_printf("user_data_registered_itu_t_t35()"); AddTreeItemValueZero(sp);
+                break;
+            case 5:
+                my_printf("user_data_unregistered()"); AddTreeItemValueZero(sp);
+                break;
+            case 17:
+                my_printf("progressive_refinement_segment_end()"); AddTreeItemValueZero(sp);
+                break;
+            case 22:
+                my_printf("post_filter_hint()"); AddTreeItemValueZero(sp);
+                break;
+            case 132:
+                my_printf("decoded_picture_hash()"); AddTreeItemValueZero(sp);
+                break;
+            case 16:
+                my_printf("progressive_refinement_segment_start()"); AddTreeItemValueZero(sp);
+                break;
+            default:
+                my_printf("reserved_sei_message()"); AddTreeItemValueZero(sp);
+                break;
+            }
+        }
+    }
+
+    my_printf("rbsp_trailing_bits()"); AddTreeItemValueZero(isei);
+
+
+}
+
+void NALParser::h265DebugRefPicListsModification(h265_slice_header_t* hrd, NALTreeNode& root)
+{
+    my_printf("ref_pic_list_modification_flag_l0: %d", hrd->ref_pic_lists_modification.ref_pic_list_modification_flag_l0);
+    auto modf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(modf, root);
+    if (hrd->ref_pic_lists_modification.ref_pic_list_modification_flag_l0)
+    {
+        for (int i = 0; i <= hrd->num_ref_idx_l0_active_minus1; i++)
+            my_printf("list_entry_l0[%d]: %u", i, hrd->ref_pic_lists_modification.list_entry_l0[i]); AddTreeItemValueZero(modf);
+    }
+    if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
+    {
+        my_printf("ref_pic_list_modification_flag_l1: %d", hrd->ref_pic_lists_modification.ref_pic_list_modification_flag_l1); AddTreeItemValueZero(modf);
+        for (int i = 0; i <= hrd->num_ref_idx_l1_active_minus1; i++)
+            my_printf("list_entry_l1[%d]: %u", i, hrd->ref_pic_lists_modification.list_entry_l1[i]); AddTreeItemValueZero(modf);
+    }
+}
+
+void NALParser::h265DebugPredWeightTable(h265_stream_t* h, NALTreeNode& root)
+{
+    pred_weight_table_t* pwt = &h->sh->pred_weight_table;
+    h265_sps_t* sps = h->sps;
+
+    my_printf("pred_weight_table()");
+
+    auto ipwt = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(ipwt, root);
+
+
+    my_printf("luma_log2_weight_denom: %d  (v bits)", pwt->luma_log2_weight_denom); AddTreeItemValueZero(ipwt);
+    if (h->sps->chroma_format_idc != 0)
+    {
+        my_printf("delta_chroma_log2_weight_denom: %d  (v bits)", pwt->delta_chroma_log2_weight_denom);
+        AddTreeItemValueZero(ipwt);
+    }
+
+    auto nria = std::make_shared<TreeNode<ParameterDescription>>("NumRefIdxL0Active");
+
+    if (h->sh->num_ref_idx_l0_active_minus1 >= 0)
+    {
+        my_printf("NumRefIdxL0Active");
+        auto nria = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(nria, ipwt);
+       
+    }
+
+    for (int i = 0; i <= h->sh->num_ref_idx_l0_active_minus1; i++)
+    {
+        my_printf_flag2("luma_weight_l0_flag", i, pwt->luma_weight_l0_flag[i]);
+        AddTreeItemValueZero(nria);
+    }
+    if (h->sps->chroma_format_idc != 0)
+    {
+        for (int i = 0; i <= h->sh->num_ref_idx_l0_active_minus1; i++)
+        {
+            my_printf_flag2("chroma_weight_l0_flag", i, pwt->chroma_weight_l0_flag[i]);
+            AddTreeItemValueZero(nria);
+        }
+    }
+
+
+    for (int i = 0; i <= h->sh->num_ref_idx_l0_active_minus1; i++)
+    {
+        if (pwt->luma_weight_l0_flag[i])
+        {
+            my_printf("delta_luma_weight_l0[%d]: %d  (v bits)", i, pwt->delta_luma_weight_l0[i]); AddTreeItemValueZero(nria);
+            my_printf("luma_offset_l0[%d]: %d  (v bits)", i, pwt->luma_offset_l0[i]); AddTreeItemValueZero(nria);
+        }
+        if (pwt->chroma_weight_l0_flag[i])
+        {
+            for (int j = 0; j < 2; j++)
+            {
+                my_printf("delta_chroma_weight_l0[%d][%d]: %d  (v bits)", i, j, pwt->delta_chroma_weight_l0[i][j]); AddTreeItemValueZero(nria);
+                my_printf("delta_chroma_offset_l0[%d][%d]: %d  (v bits)", i, j, pwt->delta_chroma_offset_l0[i][j]); AddTreeItemValueZero(nria);
+            }
+        }
+    }
+
+    auto nria_l = std::make_shared<TreeNode<ParameterDescription>>("NumRefIdxL0Active");
+    
+    if ((h->sh->slice_type == H265_SH_SLICE_TYPE_B) && (h->sh->num_ref_idx_l1_active_minus1 >= 0))
+    {
+        my_printf("NumRefIdxL1Active");
+        auto nria_l = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(nria_l, ipwt);
+
+    }
+
+    if (h->sh->slice_type == H265_SH_SLICE_TYPE_B)
+    {
+        for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
+        {
+            my_printf_flag2("luma_weight_l1_flag", i, pwt->luma_weight_l1_flag[i]);
+            AddTreeItemValueZero(nria_l);
+        }
+        if (h->sps->chroma_format_idc != 0)
+        {
+            for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
+            {
+                my_printf_flag2("chroma_weight_l1_flag", i, pwt->chroma_weight_l1_flag[i]);
+                AddTreeItemValueZero(nria_l);
+            }
+        }
+        for (int i = 0; i <= h->sh->num_ref_idx_l1_active_minus1; i++)
+        {
+            if (pwt->luma_weight_l1_flag[i])
+            {
+                my_printf("delta_luma_weight_l1[%d]: %d  (v bits)", i, pwt->delta_luma_weight_l1[i]); AddTreeItemValueZero(nria_l);
+                my_printf("luma_offset_l1[%d]: %d  (v bits)", i, pwt->luma_offset_l1[i]); AddTreeItemValueZero(nria_l);
+
+            }
+            if (pwt->chroma_weight_l1_flag[i])
+            {
+                for (int j = 0; j < 2; j++)
+                {
+                    my_printf("delta_chroma_weight_l1[%d][%d]: %d  (v bits)", i, j, pwt->delta_chroma_weight_l1[i][j]);
+                    AddTreeItemValueZero(nria_l);
+                    my_printf("delta_chroma_offset_l1[%d][%d]: %d  (v bits)", i, j, pwt->delta_chroma_offset_l1[i][j]);
+                    AddTreeItemValueZero(nria_l);
+                }
+            }
+        }
+    }
+}
+
+void NALParser::h265DebugSliceHeader(h265_stream_t* h, NALTreeNode& root)
+{
+    h265_slice_header_t* hrd = h->sh;
+    h265_sps_t* sps = NULL;
+    h265_pps_t* pps = NULL;
+    int nal_unit_type = h->nal->nal_unit_type;
+    h->pps = h->pps_table[hrd->slice_pic_parameter_set_id];
+    pps = h->pps;
+    h->sps = h->sps_table[pps->pps_seq_parameter_set_id];
+    sps = h->sps;
+    if (pps == NULL || sps == NULL) return;
+
+    my_printf("slice_segment_layer_rbsp()");
+
+    auto islce = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(islce, root);
+
+
+    my_printf("slice_segment_header()");
+    auto ihrd = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+    this->m_root->putChild(ihrd, islce);
+
+
+    my_printf_flag("first_slice_segment_in_pic_flag", hrd->first_slice_segment_in_pic_flag); AddTreeItemValueZero(ihrd);
+    if (nal_unit_type >= NAL_UNIT_CODED_SLICE_BLA_W_LP && nal_unit_type <= NAL_UNIT_RESERVED_IRAP_VCL23)
+    {
+        my_printf_flag("no_output_of_prior_pics_flag", hrd->no_output_of_prior_pics_flag); AddTreeItemValueZero(ihrd);
+    }
+    my_printf("slice_pic_parameter_set_id: %d (v bits)", hrd->slice_pic_parameter_set_id); AddTreeItemValueZero(ihrd);
+    if (!hrd->first_slice_segment_in_pic_flag)
+    {
+        if (pps->dependent_slice_segments_enabled_flag)
+        {
+            my_printf_flag("dependent_slice_segment_flag", hrd->dependent_slice_segment_flag); AddTreeItemValueZero(ihrd);
+        }
+        my_printf("slice_segment_address: %d (v %d bits)", hrd->slice_segment_address, hrd->slice_segment_address_bytes);
+        AddTreeItemValueZero(ihrd);
+    }
+
+    if (!hrd->dependent_slice_segment_flag)
+    {
+        my_printf("dependent_slice_segment_flag");
+
+        auto dssf = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(dssf, ihrd);
+
+        for (int i = 0; i < pps->num_extra_slice_header_bits; i++)
+        {
+            my_printf("slice_reserved_flag[%d]: %d", i, hrd->slice_reserved_flag[i]); // todo
+            AddTreeItemValueZero(dssf);
+        }
+        const char* slice_type_name;
+        switch (hrd->slice_type)
+        {
+        case H265_SH_SLICE_TYPE_P:  slice_type_name = "P slice"; break;
+        case H265_SH_SLICE_TYPE_B:  slice_type_name = "B slice"; break;
+        case H265_SH_SLICE_TYPE_I:  slice_type_name = "I slice"; break;
+        default:                    slice_type_name = "Unknown"; break;
+        }
+        my_printf("slice_type: %d (%s) (v bits)", hrd->slice_type, slice_type_name); AddTreeItemValueZero(dssf);
+        if (pps->output_flag_present_flag)
+        {
+            my_printf_flag("pic_output_flag", hrd->pic_output_flag); AddTreeItemValueZero(dssf);
+        }
+        if (sps->separate_colour_plane_flag == 1)
+        {
+            my_printf("colour_plane_id: %d  (2 bits)", hrd->colour_plane_id); AddTreeItemValueZero(dssf);
+        }
+        if (nal_unit_type == NAL_UNIT_CODED_SLICE_IDR_W_RADL || nal_unit_type == NAL_UNIT_CODED_SLICE_IDR_N_LP)
+        {
+            // do nothing...
+        }
+        else
+        {
+            my_printf("slice_pic_order_cnt_lsb: %d  (%d bits)", hrd->slice_pic_order_cnt_lsb, hrd->slice_pic_order_cnt_lsb_bytes); AddTreeItemValueZero(dssf);
+            my_printf_flag("short_term_ref_pic_set_sps_flag", hrd->short_term_ref_pic_set_sps_flag); AddTreeItemValueZero(dssf);
+            if (!hrd->short_term_ref_pic_set_sps_flag)
+            {
+                referencePictureSets_t* rps = &hrd->m_localRPS;
+                h265DebugShortTermRefPicSet(sps, &hrd->st_ref_pic_set, rps, sps->num_short_term_ref_pic_sets, dssf);
+            }
+            else if (sps->num_short_term_ref_pic_sets > 1)
+            {
+                my_printf("short_term_ref_pic_set_idx: %d  (v %d bits)", hrd->short_term_ref_pic_set_idx, hrd->short_term_ref_pic_set_idx_bytes);
+                AddTreeItemValueZero(dssf);
+            }
+            if (sps->long_term_ref_pics_present_flag)
+            {
+                if (sps->num_long_term_ref_pics_sps > 0)
+                {
+                    my_printf("num_long_term_sps: %d  (v bits)", hrd->num_long_term_sps); AddTreeItemValueZero(dssf);
+                }
+                my_printf("num_long_term_pics: %d  (v bits)", hrd->num_long_term_pics); AddTreeItemValueZero(dssf);
+                for (int i = 0; i < (int)hrd->lt_idx_sps.size(); i++)
+                {
+                    if (i < hrd->num_long_term_sps)
+                    {
+                        if (sps->num_long_term_ref_pics_sps > 1)
+                        {
+                            my_printf("lt_idx_sps[%d]: %d  (v bits)", i, hrd->lt_idx_sps[i]); AddTreeItemValueZero(dssf);
+                        }
+                    }
+                    else
+                    {
+                        my_printf("poc_lsb_lt[%d]: %d  (v bits)", i, hrd->poc_lsb_lt[i]); AddTreeItemValueZero(dssf);
+                        my_printf_flag2("used_by_curr_pic_lt_flag", i, hrd->used_by_curr_pic_lt_flag[i]); AddTreeItemValueZero(dssf);
+                    }
+                    my_printf_flag2("delta_poc_msb_present_flag", i, hrd->delta_poc_msb_present_flag[i]); AddTreeItemValueZero(dssf);
+                    if (hrd->delta_poc_msb_present_flag[i])
+                    {
+                        my_printf("delta_poc_msb_cycle_lt[%d]: %d  (v bits)", i, hrd->delta_poc_msb_cycle_lt[i]);
+                        AddTreeItemValueZero(dssf);
+                    }
+                }
+            }
+            if (sps->sps_temporal_mvp_enabled_flag)
+            {
+                my_printf_flag("slice_temporal_mvp_enabled_flag", hrd->slice_temporal_mvp_enabled_flag); AddTreeItemValueZero(dssf);
+            }
+        }
+
+        if (sps->sample_adaptive_offset_enabled_flag)
+        {
+            my_printf_flag("slice_sao_luma_flag", hrd->slice_sao_luma_flag); AddTreeItemValueZero(dssf);
+            my_printf_flag("slice_sao_chroma_flag", hrd->slice_sao_chroma_flag); AddTreeItemValueZero(dssf);
+        }
+        if (hrd->slice_type == H265_SH_SLICE_TYPE_P || hrd->slice_type == H265_SH_SLICE_TYPE_B)
+        {
+            my_printf_flag("num_ref_idx_active_override_flag", hrd->num_ref_idx_active_override_flag);
+            auto nriaof = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+            this->m_root->putChild(nriaof, dssf);
+
+            if (hrd->num_ref_idx_active_override_flag)
+            {
+                my_printf("num_ref_idx_l0_active_minus1: %d  (v bits)", hrd->num_ref_idx_l0_active_minus1); AddTreeItemValueZero(dssf);
+                if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
+                {
+                    my_printf("num_ref_idx_l1_active_minus1: %d  (v bits)", hrd->num_ref_idx_l1_active_minus1); AddTreeItemValueZero(dssf);
+                }
+            }
+            if (pps->lists_modification_present_flag)
+            {
+                h265DebugRefPicListsModification(hrd,dssf);
+            }
+            if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
+            {
+                my_printf_flag("mvd_l1_zero_flag", hrd->mvd_l1_zero_flag); AddTreeItemValueZero(dssf);
+            }
+            if (pps->cabac_init_present_flag)
+            {
+                my_printf_flag("cabac_init_flag", hrd->cabac_init_flag); AddTreeItemValueZero(dssf);
+            }
+            if (hrd->slice_temporal_mvp_enabled_flag)
+            {
+                if (hrd->slice_type == H265_SH_SLICE_TYPE_B)
+                {
+                    my_printf_flag("collocated_from_l0_flag", hrd->collocated_from_l0_flag); AddTreeItemValueZero(dssf);
+                }
+                if ((hrd->collocated_from_l0_flag && hrd->num_ref_idx_l0_active_minus1 > 0) ||
+                    (!hrd->collocated_from_l0_flag && hrd->num_ref_idx_l1_active_minus1 > 0))
+                {
+                    my_printf("collocated_ref_idx: %d  (v bits)", hrd->collocated_ref_idx); AddTreeItemValueZero(dssf);
+                }
+            }
+            if ((pps->weighted_pred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_P) ||
+                (pps->weighted_bipred_flag && hrd->slice_type == H265_SH_SLICE_TYPE_B))
+                h265DebugPredWeightTable(h, dssf);
+            my_printf("five_minus_max_num_merge_cand: %d  (v bits)", hrd->five_minus_max_num_merge_cand); AddTreeItemValueZero(dssf);
+        }
+        my_printf("slice_qp_delta: %d  (v bits)", hrd->slice_qp_delta); AddTreeItemValueZero(dssf);
+        if (pps->pps_slice_chroma_qp_offsets_present_flag)
+        {
+            my_printf("slice_cb_qp_offset: %d  (v bits)", hrd->slice_cb_qp_offset); AddTreeItemValueZero(dssf);
+            my_printf("slice_cr_qp_offset: %d  (v bits)", hrd->slice_cr_qp_offset); AddTreeItemValueZero(dssf);
+        }
+        if (pps->pps_range_extension.chroma_qp_offset_list_enabled_flag)
+        {
+            my_printf_flag("cu_chroma_qp_offset_enabled_flag", hrd->cu_chroma_qp_offset_enabled_flag); AddTreeItemValueZero(dssf);
+        }
+        if (pps->deblocking_filter_override_enabled_flag)
+        {
+            my_printf_flag("deblocking_filter_override_flag", hrd->deblocking_filter_override_flag); AddTreeItemValueZero(dssf);
+        }
+        if (hrd->deblocking_filter_override_flag)
+        {
+            my_printf_flag("slice_deblocking_filter_disabled_flag", hrd->slice_deblocking_filter_disabled_flag);
+            auto dfof = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+            this->m_root->putChild(dfof, dssf);
+
+ 
+            if (!hrd->slice_deblocking_filter_disabled_flag)
+            {
+                my_printf("slice_beta_offset_div2: %d  (v bits)", hrd->slice_beta_offset_div2); AddTreeItemValueZero(dfof);
+                my_printf("slice_tc_offset_div2: %d  (v bits)", hrd->slice_tc_offset_div2); AddTreeItemValueZero(dfof);
+            }
+        }
+        if (pps->pps_loop_filter_across_slices_enabled_flag &&
+            (hrd->slice_sao_luma_flag || hrd->slice_sao_chroma_flag ||
+                !hrd->slice_deblocking_filter_disabled_flag))
+        {
+            my_printf_flag("slice_loop_filter_across_slices_enabled_flag", hrd->slice_loop_filter_across_slices_enabled_flag);
+            AddTreeItemValueZero(dssf);
+        }
+    }
+    if (pps->tiles_enabled_flag || pps->entropy_coding_sync_enabled_flag)
+    {
+        my_printf("num_entry_point_offsets: %d (v bits)", hrd->num_entry_point_offsets);
+
+        auto inepo = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+        this->m_root->putChild(inepo, ihrd);
+
+        if (hrd->num_entry_point_offsets > 0)
+        {
+            my_printf("offset_len_minus1: %d (v bits)", hrd->offset_len_minus1); AddTreeItemValueZero(inepo);
+            my_printf("NumEntryPointOffsets");
+            auto iinepo = std::make_shared<TreeNode<ParameterDescription>>(m_outputInfo);
+            this->m_root->putChild(iinepo, ihrd);
+            for (int i = 0; i < hrd->num_entry_point_offsets; i++)
+            {
+                my_printf("entry_point_offset_minus1[%d]: %d (%d bits)", i, hrd->entry_point_offset_minus1[i], hrd->entry_point_offset_minus1_bytes); // to add len
+                AddTreeItemValueZero(iinepo);
+            }
+        }
+    }
+    if (pps->slice_segment_header_extension_present_flag)
+    {
+        my_printf("slice_segment_header_extension_length: %d (v bits)", hrd->slice_segment_header_extension_length);
+        AddTreeItemValueZero(ihrd);
+        for (int i = 0; i < hrd->slice_segment_header_extension_length; i++)
+        {
+            my_printf("slice_segment_header_extension_data_byte[%d]: %d  (8 bits)", i, hrd->slice_segment_header_extension_data_byte[i]);
+            AddTreeItemValueZero(ihrd);
+        }
+    }
+    // no need to debug...
+    my_printf("slice_segment_data()");
+    AddTreeItemValueZero(islce);
+    my_printf("rbsp_slice_segment_trailing_bits()");
+    AddTreeItemValueZero(islce);
+
 }
 
