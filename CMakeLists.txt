@@ -4,7 +4,6 @@ project(streamAnalyze)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(QT_DIR "D:/Qt/6.4.3/msvc2019_64")
 #预定义宏
 add_definitions(-D _SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING)
 add_definitions(-D __windows__)
@@ -21,7 +20,7 @@ set(UTILS_PATH ${CMAKE_SOURCE_DIR}/utils)
 set(IMAGUI_PATH ${CMAKE_SOURCE_DIR}/imgui)
 set(THIRD_PART_PATH ${CMAKE_SOURCE_DIR}/3dpart)
 
-list(APPEND CMAKE_PREFIX_PATH "D:/Qt/6.4.3/msvc2019_64/lib/cmake")
+list(APPEND CMAKE_PREFIX_PATH ${QT_DIR}/lib/cmake)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/output/")
 #src and lib
 set(PROJECT_LIBS)
@@ -112,7 +111,7 @@ set(STRAM_ANALYZE_APP
 )
 
 my_add_executable(stream_analyze ${STRAM_ANALYZE_APP})
-target_link_libraries(stream_analyze PRIVATE Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Multimedia Qt6::Widgets)
+target_link_libraries(stream_analyze PRIVATE Qt6::Core Qt6::Gui Qt${QT_VERSION_MAJOR}::Qml Qt6::Quick Qt6::Multimedia Qt6::Widgets)
 qt_import_qml_plugins(${CMAKE_PROJECT_NAME})
 
 
