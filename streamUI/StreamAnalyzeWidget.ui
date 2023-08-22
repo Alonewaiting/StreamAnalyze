@@ -22,7 +22,7 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout" stretch="1,10,3">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,1,1,1,1,2,0,0,6">
+     <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,1,1,1,1,2,0,0,0,6">
       <item>
        <widget class="QPushButton" name="pushButtonPlayer">
         <property name="text">
@@ -85,6 +85,13 @@
           <string>H264</string>
          </property>
         </item>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButtonFrame">
+        <property name="text">
+         <string>ShowFrame</string>
+        </property>
        </widget>
       </item>
       <item>

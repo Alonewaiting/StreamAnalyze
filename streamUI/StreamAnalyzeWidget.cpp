@@ -1,7 +1,7 @@
 #include "StreamAnalyzeWidget.h"
 #include "FileStream.h"
 #include "NALParse.h"
-
+#include "QtWidgetsFrameShow.h"
 #include <QStandardItemModel>
 #include <QStandardItem>
 #include <QMessageBox>
@@ -25,6 +25,8 @@ StreamAnalyzeWidget::StreamAnalyzeWidget(QWidget *parent)
 {
     ui.setupUi(this);
     m_model = new QStandardItemModel(this->ui.tableViewNALU);
+    m_frameShow = new QtWidgetsFrameShow(parent);
+
     m_model->setHorizontalHeaderItem(TABLELINE_NUM, new QStandardItem("No."));
     m_model->setHorizontalHeaderItem(TABLELINE_OFFSET, new QStandardItem("Offset"));
     m_model->setHorizontalHeaderItem(TABLELINE_LEN, new QStandardItem("Length"));
@@ -40,6 +42,9 @@ StreamAnalyzeWidget::StreamAnalyzeWidget(QWidget *parent)
     connect(this->ui.pushButtonStop ,&QPushButton::clicked, this , &StreamAnalyzeWidget::stopButtonClick);
     connect(this->ui.pushButtonPlayer, &QPushButton::clicked, this, &StreamAnalyzeWidget::playButtonClick);
     connect(this->ui.tableViewNALU,&QTableView::clicked,this , &StreamAnalyzeWidget::lineClickedParser);
+    connect(this->ui.pushButtonFrame, &QPushButton::clicked, [this]{
+        m_frameShow->show();
+    });
 }
 
 StreamAnalyzeWidget::~StreamAnalyzeWidget()
@@ -135,7 +140,7 @@ void StreamAnalyzeWidget::parserNal(const NALUnit& nal){
     //show info.
     if (info.type.get())
     {
-        //// profile类型
+        //// profile绫诲瀷
         //switch (info.profile_idc.get())
         //{
         //case PROFILE_NONE:
@@ -224,7 +229,7 @@ void StreamAnalyzeWidget::parserNal(const NALUnit& nal){
     }
     else // h264
     {
-        // profile类型
+        // profile绫诲瀷
         switch (info.profile_idc.get())
         {
         case 66:

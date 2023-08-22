@@ -11,6 +11,7 @@ class NALParser;
 template<class T>
 class TreeList;
 struct ParameterDescription;
+class QtWidgetsFrameShow;
 
 class StreamAnalyzeWidget : public QMainWindow
 {
@@ -39,6 +40,7 @@ private:
     std::vector<NALUnit> m_NALUnits;
     std::shared_ptr<NALParser> m_nalParser;
     QStandardItemModel* m_model;
+    QtWidgetsFrameShow * m_frameShow;
     QString m_filePath;
     QString m_strProfileInfo;
     QString m_strTierInfo;

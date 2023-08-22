@@ -52,6 +52,7 @@ public:
     QLineEdit *lineEditFilePath;
     QLabel *label_3;
     QComboBox *comboBoxStreamType;
+    QPushButton *pushButtonFrame;
     QSpacerItem *horizontalSpacer;
     QGridLayout *gridLayout;
     QTableView *tableViewNALU;
@@ -136,6 +137,11 @@ public:
 
         horizontalLayout_2->addWidget(comboBoxStreamType);
 
+        pushButtonFrame = new QPushButton(centralWidget);
+        pushButtonFrame->setObjectName("pushButtonFrame");
+
+        horizontalLayout_2->addWidget(pushButtonFrame);
+
         horizontalSpacer = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
         horizontalLayout_2->addItem(horizontalSpacer);
@@ -146,7 +152,7 @@ public:
         horizontalLayout_2->setStretch(3, 1);
         horizontalLayout_2->setStretch(4, 1);
         horizontalLayout_2->setStretch(5, 2);
-        horizontalLayout_2->setStretch(8, 6);
+        horizontalLayout_2->setStretch(9, 6);
 
         verticalLayout->addLayout(horizontalLayout_2);
 
@@ -249,6 +255,7 @@ public:
         comboBoxStreamType->setItemText(0, QCoreApplication::translate("StreamAnalyzeWidgetClass", "H265", nullptr));
         comboBoxStreamType->setItemText(1, QCoreApplication::translate("StreamAnalyzeWidgetClass", "H264", nullptr));
 
+        pushButtonFrame->setText(QCoreApplication::translate("StreamAnalyzeWidgetClass", "ShowFrame", nullptr));
         menuMain->setTitle(QCoreApplication::translate("StreamAnalyzeWidgetClass", "\345\274\200\345\247\213", nullptr));
         menuView->setTitle(QCoreApplication::translate("StreamAnalyzeWidgetClass", "\350\247\206\345\233\276", nullptr));
     } // retranslateUi

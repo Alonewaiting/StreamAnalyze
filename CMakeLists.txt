@@ -93,6 +93,11 @@ if(${OPENAL_DEMO})
 	)
 	my_add_executable(test_h265_analyze ${H265ANALYZE_TEST})
 	
+	set(HEVC_WITH_APPHA_TEST 
+		${PROJECT_SRC_FILES}
+		${CMAKE_SOURCE_DIR}/example/test_hevc_with_alpha_merge.cpp
+	)
+	my_add_executable(test_hevc_with_alpha ${HEVC_WITH_APPHA_TEST})
 endif()
 
 #QT
@@ -100,7 +105,8 @@ find_package(Qt6 COMPONENTS Core Widgets Gui Qml Quick Multimedia REQUIRED)
 #moc编译在这里进行，请把含有Q_OBJECT宏定义的头文件放到这里来
 
 QT6_WRAP_CPP(MOC_Files
-      ${STREAM_UI_PATH}/StreamAnalyzeWidget.h)
+      ${STREAM_UI_PATH}/StreamAnalyzeWidget.h
+      ${STREAM_UI_PATH}/QtWidgetsFrameShow.h)
 
 include(${STREAM_UI_PATH}/streamUI.cmake)
 include_directories(${STREAM_UI_PATH})
