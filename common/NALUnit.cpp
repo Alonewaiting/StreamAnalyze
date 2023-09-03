@@ -120,6 +120,10 @@ NALUnit::NALUnit()
 
 void NALUnit::init(const uint8_t* data, size_t size, uint8_t startCodeSize, STREAM_TYPE streamType)
 {
+    if (size == 0) {
+        m_nalUnitData.clear();
+        return;
+    }
     m_nalUnitData.resize(size,0);
     memcpy(m_nalUnitData.data(), data, size);
     if (startCodeSize == 3) {

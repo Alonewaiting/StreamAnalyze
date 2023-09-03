@@ -23,7 +23,7 @@ public:
     NALParser(STREAM_TYPE streamType);
     ~NALParser();
     int release(void);
-    int parseNALU(const NALUnit& vNal);
+    int parseNALU(NALUnit& vNal);
     std::shared_ptr<TreeList<ParameterDescription>> getRootTree()const { return m_root; }
     void getVideoInfo(videoinfo_t* videoInfo);
   

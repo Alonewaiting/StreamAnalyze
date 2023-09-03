@@ -16,12 +16,13 @@ public:
     size_t getStartSize() const { return m_startCode.size(); }
     STREAM_TYPE getStreamType() const { return m_streamType;}
     SLICE_TYPE getSliceType() const {return m_sliceType;}
+    void setSliceType(const SLICE_TYPE& sliceType) { m_sliceType = sliceType; }
     bool isNULL() const { return m_nalUnitData.empty(); }
     NALType getNALUType()const { return m_nalType; }
     void setStreamType(const STREAM_TYPE& type){ m_streamType = type;}
     std::string getNALUTypeName() const ;
     uint8_t operator[] (const size_t i) const;
-    //Ê¹ÓÃÓÑÔªº¯Êı Êä³öÔËËã·ûÖØÔØ
+    //ä½¿ç”¨å‹å…ƒå‡½æ•° è¾“å‡ºè¿ç®—ç¬¦é‡è½½
     friend std::ostream& operator<<(std::ostream& os, const NALUnit& nal);
 private:
     std::vector<uint8_t> m_nalUnitData;

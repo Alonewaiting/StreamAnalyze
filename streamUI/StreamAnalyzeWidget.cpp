@@ -60,9 +60,16 @@ void StreamAnalyzeWidget::fillNALUTable(int size){
     while (size--)
     {
         auto nalUnit = m_fstream->getNextNALUnit();
+        if (nalUnit.isNULL()) {
+            break;
+        }
         auto nalData = nalUnit.getNALUnit();
         auto startCode = nalUnit.getStartCode();
         auto streamType = nalUnit.getStreamType();
+        if (!m_nalParser) {
+            m_nalParser = std::make_shared<NALParser>(nalUnit.getStreamType());
+        }
+        m_nalParser->parseNALU(nalUnit);
         startCode.push_back(nalData[0]);
         auto nalTypeName = QString::fromStdString(nalUnit.getNALUTypeName());
         switch (streamType)
@@ -82,7 +89,198 @@ void StreamAnalyzeWidget::fillNALUTable(int size){
         default:
             break;
         }
-        addTableData(offset,nalUnit.getNALUnitSize(), startCode , nalTypeName,"");
+        QString info = "Unspecified";
+        QString colorInfo = "#FFFFFF";
+        if (streamType == STREAM_TYPE::STREAM_H264)
+        {
+            // NAL单元类型
+            switch (nalUnit.getNALUType())
+            {
+            case 0:
+                info = "Unspecified";
+                break;
+            case 1:
+                info = "Coded slice of a non-IDR picture";
+                switch (nalUnit.getSliceType())
+                {
+                case SLICE_TYPE::SLICE_P:
+                    info = QString("P Slice #%1").arg(m_nSliceIndex);
+                    break;
+                case SLICE_TYPE::SLICE_B:
+                    info = QString("B Slice #%1").arg(m_nSliceIndex);
+                    break;
+                case SLICE_TYPE::SLICE_I:
+                    info = QString("I Slice #%1").arg(m_nSliceIndex);
+                    break;
+                }
+                m_nSliceIndex++;
+                break;
+            case 2:
+                info = "DPA";
+                break;
+            case 3:
+                info = "DPB";
+                break;
+            case 4:
+                info = "DPC";
+                break;
+            case 5:
+                info = "DPA";
+                colorInfo = "#FF0033";
+                info = QString("IDR #%1").arg(m_nSliceIndex);
+                m_nSliceIndex++;
+                break;
+            case 6:
+                //strNalUnitType.Format(_T("Supplemental enhancement information"));
+                info = "SEI";
+                colorInfo = "#CCCCFF";
+                break;
+            case 7:
+                //strNalUnitType.Format(_T("Sequence parameter set"));
+                info = "SPS";
+                colorInfo = "#FF6666";
+                break;
+            case 8:
+                //strNalUnitType.Format(_T("Picture parameter set"));
+
+                info = "PPS";
+                colorInfo = "#CCFF66";
+                break;
+            case 9:
+                //strNalUnitType.Format(_T("Access UD"));
+                info = "AUD";
+                break;
+            case 10:
+                //strNalUnitType.Format(_T("END_SEQUENCE"));
+                break;
+            case 11:
+                //strNalUnitType.Format(_T("END_STREAM"));
+                break;
+            case 12:
+                //strNalUnitType.Format(_T("FILLER_DATA"));
+                break;
+            case 13:
+                //strNalUnitType.Format(_T("SPS_EXT"));
+                break;
+            case 19:
+                //strNalUnitType.Format(_T("AUXILIARY_SLICE"));
+                break;
+            default:
+                info = "Other";
+                break;
+            }
+        }
+        else if(streamType == STREAM_TYPE::STREAM_H265)
+        {
+            // NAL单元类型
+            switch (nalUnit.getNALUType())
+            {
+                // to confirm type...
+            case NAL_UNIT_CODED_SLICE_TRAIL_N:
+            case NAL_UNIT_CODED_SLICE_TRAIL_R:
+                //strNalUnitType.Format(_T("Coded slice segment of a non-TSA, non-STSA trailing picture"));
+                switch (nalUnit.getSliceType())
+                {
+                case SLICE_TYPE::SLICE_P:
+                    info = QString("P Slice #%1").arg(m_nSliceIndex);
+                    break;
+                case SLICE_TYPE::SLICE_B:
+                    info = QString("B Slice #%1").arg(m_nSliceIndex);
+                    break;
+                case SLICE_TYPE::SLICE_I:
+                    info = QString("I Slice #%1").arg(m_nSliceIndex);
+                    break;
+                }
+                m_nSliceIndex++;
+                break;
+            case NAL_UNIT_CODED_SLICE_TSA_N:
+            case NAL_UNIT_CODED_SLICE_TSA_R:
+                //strNalUnitType.Format(_T("Coded slice segment of a TSA picture"));
+                switch (nalUnit.getSliceType())
+                {
+                case SLICE_TYPE::SLICE_P:
+                    info = QString("P Slice #%1").arg(m_nSliceIndex);
+                    break;
+                case SLICE_TYPE::SLICE_B:
+                    info = QString("B Slice #%1").arg(m_nSliceIndex);
+                    break;
+                case SLICE_TYPE::SLICE_I:
+                    info = QString("I Slice #%1").arg(m_nSliceIndex);
+                    break;
+                }
+                m_nSliceIndex++;
+                break;
+            case NAL_UNIT_CODED_SLICE_RADL_N:
+            case NAL_UNIT_CODED_SLICE_RADL_R:
+                //strNalUnitType.Format(_T("Coded slice segment of a TSA picture"));
+                switch (nalUnit.getSliceType())
+                {
+                case SLICE_TYPE::SLICE_P:
+                    info = QString("P Slice #%1").arg(m_nSliceIndex);
+                    break;
+                case SLICE_TYPE::SLICE_B:
+                    info = QString("B Slice #%1").arg(m_nSliceIndex);
+                    break;
+                case SLICE_TYPE::SLICE_I:
+                    info = QString("I Slice #%1").arg(m_nSliceIndex);
+                    break;
+                }
+                m_nSliceIndex++;
+                break;
+            case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
+            case NAL_UNIT_CODED_SLICE_IDR_N_LP:
+                colorInfo = "#FF0033";
+                //strNalUnitType.Format(_T("Coded slice of an IDR picture"));
+                info = QString("IDR #%1").arg(m_nSliceIndex);
+                m_nSliceIndex++;
+                break;
+            case NAL_UNIT_CODED_SLICE_CRA:
+                //strNalUnitType.Format(_T("Coded slice segment of a CRA picture"));
+                colorInfo = "#FF3399";
+                info = QString("CRA #%1").arg(m_nSliceIndex);
+                m_nSliceIndex++;
+                break;
+            case NAL_UNIT_PREFIX_SEI:
+            case NAL_UNIT_SUFFIX_SEI:
+                //strNalUnitType.Format(_T("Supplemental enhancement information"));
+                info = "SEI";
+                colorInfo = "#CCCCFF";
+                break;
+            case NAL_UNIT_VPS:
+                info = "VPS";
+                colorInfo = "#99CC00";
+                break;
+            case NAL_UNIT_SPS:
+                //strNalUnitType.Format(_T("Sequence parameter set"));
+                info = "SPS";
+                colorInfo = "#FF6666";
+                break;
+            case NAL_UNIT_PPS:
+                //strNalUnitType.Format(_T("Picture parameter set"));
+                info = "PPS";
+                colorInfo = "#CCFF66";
+                break;
+            case NAL_UNIT_AUD:
+                //strNalUnitType.Format(_T("Access UD"));
+                info = "AUD";
+                break;
+            case NAL_UNIT_EOS:
+             
+                break;
+            case NAL_UNIT_EOB:
+              
+                break;
+            case NAL_UNIT_FILLER_DATA:
+              
+                break;
+            default:
+                info = "Unknown";
+                break;
+            }
+        }
+
+
+        addTableData(offset,nalUnit.getNALUnitSize(), startCode , nalTypeName,info, colorInfo);
         offset += nalUnit.getNALUnitSize();
         m_NALUnits.push_back(nalUnit);
     }
@@ -91,17 +289,24 @@ void StreamAnalyzeWidget::fillNALUTable(int size){
 
 
 }
-void StreamAnalyzeWidget::addTableData(int64_t offset, int64_t length,const std::vector<uint8_t>& startCode,const QString& NALType,const QString& info)
+void StreamAnalyzeWidget::addTableData(int64_t offset, int64_t length,const std::vector<uint8_t>& startCode,const QString& NALType,const QString& info, const QString& color)
 {
     int iCurLine = m_model->rowCount();
     m_model->setItem(iCurLine, TABLELINE_NUM, new QStandardItem(QString::number(iCurLine)));
     m_model->item(iCurLine, TABLELINE_NUM)->setTextAlignment(Qt::AlignCenter);
+    m_model->item(iCurLine, TABLELINE_NUM)->setBackground(QBrush(QColor(color)));
+
+
     QString str = QString("%1").arg(offset, 8, 16, QLatin1Char('0')).toUpper();
     m_model->setItem(iCurLine, TABLELINE_OFFSET, new QStandardItem(str));
     m_model->item(iCurLine, TABLELINE_OFFSET)->setTextAlignment(Qt::AlignCenter);
+    m_model->item(iCurLine, TABLELINE_OFFSET)->setBackground(QBrush(QColor(color)));
+
 
     m_model->setItem(iCurLine, TABLELINE_LEN, new QStandardItem(QString::number(length)));
     m_model->item(iCurLine, TABLELINE_LEN)->setTextAlignment(Qt::AlignCenter);
+    m_model->item(iCurLine, TABLELINE_LEN)->setBackground(QBrush(QColor(color)));
+
     QString strStartCode;
     for (const auto& num : startCode) {
         strStartCode += QString("%1").arg(num, 2, 16, QLatin1Char('0')).toUpper();
@@ -110,17 +315,20 @@ void StreamAnalyzeWidget::addTableData(int64_t offset, int64_t length,const std:
 
     m_model->setItem(iCurLine, TABLELINE_START_CODE, new QStandardItem(strStartCode));
     m_model->item(iCurLine, TABLELINE_START_CODE)->setTextAlignment(Qt::AlignCenter);
+    m_model->item(iCurLine, TABLELINE_START_CODE)->setBackground(QBrush(QColor(color)));
 
     m_model->setItem(iCurLine, TABLELINE_NLU_TYPE, new QStandardItem(NALType));
     m_model->item(iCurLine, TABLELINE_NLU_TYPE)->setTextAlignment(Qt::AlignCenter);
+    m_model->item(iCurLine, TABLELINE_NLU_TYPE)->setBackground(QBrush(QColor(color)));
+
 
     m_model->setItem(iCurLine, TABLELINE_INFO, new QStandardItem(info));
     m_model->item(iCurLine, TABLELINE_INFO)->setTextAlignment(Qt::AlignCenter);
-
-
+    m_model->item(iCurLine, TABLELINE_INFO)->setBackground(QBrush(QColor(color)));
+    
 
 }
-void StreamAnalyzeWidget::parserNal(const NALUnit& nal){
+void StreamAnalyzeWidget::parserNal(NALUnit& nal){
     if (nal.isNULL()) {
         return;
     }
@@ -391,7 +599,7 @@ void StreamAnalyzeWidget::openFile() {
      settings->beginGroup("PATH");
      settings->setValue("OpenFilePath", m_filePath);
      settings->endGroup();
-
+    m_nalParser = nullptr;
     this->ui.lineEditFilePath->setText(m_filePath);
     int size =  this->ui.lineEditLength->text().toInt();
     fillNALUTable(size);

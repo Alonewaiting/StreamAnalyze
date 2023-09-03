@@ -29,8 +29,8 @@ private slots:
     void playButtonClick();
 private:
     void fillNALUTable(int size);
-    void addTableData(int64_t offset, int64_t length, const std::vector<uint8_t>& startCode,const QString& NALType,const QString &info);
-    void parserNal(const NALUnit& nal);
+    void addTableData(int64_t offset, int64_t length, const std::vector<uint8_t>& startCode,const QString& NALType,const QString &info,const QString& color);
+    void parserNal(NALUnit& nal);
     void showNALUTree(const  std::shared_ptr<TreeList<ParameterDescription>> & tree);
     void showNALUBits(const NALUnit& nal);
     
@@ -48,4 +48,5 @@ private:
     QString m_strVideoFormat;
     QString m_strSimpleInfo;
     QString m_strLevelInfo;
+    int m_nSliceIndex = 0;
 };

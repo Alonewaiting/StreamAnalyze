@@ -51,14 +51,30 @@ int NALParser::release(void) {
     }
     return 0;
 }
-int NALParser::parseNALU(const NALUnit& vNal) {
+int NALParser::parseNALU(NALUnit& vNal) {
     if (m_streamType == STREAM_TYPE::STREAM_H264) {
         read_nal_unit(m_hH264, vNal.getNALUnit().data(), vNal.getNALUnitSize());
+        switch (m_hH264->sh->slice_type.get())
+        {
+        case 0:
+        case 5:
+            vNal.setSliceType(SLICE_TYPE::SLICE_P);
+            break;
+        case 1:
+        case 6:
+            vNal.setSliceType(SLICE_TYPE::SLICE_B);
+            break;
+        case 2:
+        case 7:
+            vNal.setSliceType(SLICE_TYPE::SLICE_I);
+            break;
+        }
         h264debugNALU(m_hH264, m_hH264->nal);
     }
     else if(m_streamType == STREAM_TYPE::STREAM_H265) {
         h265_read_nal_unit(m_hH265, vNal.getNALUnit().data(), vNal.getNALUnitSize());
-        h265debugNALU(m_hH265,m_hH265->nal);
+        vNal.setSliceType((SLICE_TYPE)m_hH265->sh->slice_type);
+        h265debugNALU(m_hH265, m_hH265->nal);
     }
     return 0;
 }

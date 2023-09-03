@@ -10,12 +10,12 @@ FileStream::FileStream(const std::string& fileName)
     m_fileName =  fileName;
     m_strType = getStreamType();
 }
-//¶ÁÈ¡µ¥¸öNALUnit
+//è¯»å–å•ä¸ªNALUnit
 NALUnit FileStream::getNextNALUnit()
 {
     std::vector<uint8_t> buffer;
     uint8_t startCode = 4;
-    //0001 xxxxx 0001 Á½¸ö¼ä¸ô¾ÍÊÇNALUnit
+    //0001 xxxxx 0001 ä¸¤ä¸ªé—´éš”å°±æ˜¯NALUnit
     if (!getNALUnitHead(buffer,startCode)) {
         return {};
     }
@@ -25,21 +25,24 @@ NALUnit FileStream::getNextNALUnit()
     if (!getNALUnitHead(buffer,startCode)) {
         return {};
     }
-    m_fp.seekg(-startCode,std::ios::cur);
-    for (auto i = 0; i < startCode; i++) {
-        buffer.pop_back();
+    if (startCode != 0) {
+        m_fp.seekg(-startCode, std::ios::cur);
+        for (auto i = 0; i < startCode; i++) {
+            buffer.pop_back();
+        }
     }
+   
     return NALUnit(buffer, preStartCode, m_strType);
 }
 
 NALUnit FileStream::getFirstNALUnit()
 {
-    //»ñÈ¡µ±Ç°Î»ÖÃ
+    //è·å–å½“å‰ä½ç½®
     std::streampos sp = m_fp.tellg();
-    //seek µ½¿ªÍ·
+    //seek åˆ°å¼€å¤´
     m_fp.seekg(0,std::ios::beg);
     auto nalUnit = getNextNALUnit();
-    //»Ö¸´µ½»ñÈ¡Ö®Ç°µÄÎ»ÖÃ
+    //æ¢å¤åˆ°è·å–ä¹‹å‰çš„ä½ç½®
     m_fp.seekg(sp,std::ios::beg);
     return nalUnit;
 }
@@ -47,7 +50,7 @@ NALUnit FileStream::getFirstNALUnit()
 STREAM_TYPE FileStream::getStreamType()
 {
     //todo 
-    //ÔİÊ±Í¨¹ıÎÄ¼şÃûÅĞ¶Ï£¬Èç¹ûĞèÒª¸üÏêÏ¸µÄ²Î¿¼ffmpeg  h264_probe  hevc_probe
+    //æš‚æ—¶é€šè¿‡æ–‡ä»¶ååˆ¤æ–­ï¼Œå¦‚æœéœ€è¦æ›´è¯¦ç»†çš„å‚è€ƒffmpeg  h264_probe  hevc_probe
     auto namePos = m_fileName.find_last_of('.');
     auto strVal = m_fileName.substr(namePos + 1, m_fileName.size() - namePos);
     std::transform(strVal.begin(), strVal.end(), strVal.begin(), ::toupper);
@@ -76,6 +79,9 @@ STREAM_TYPE FileStream::getStreamType()
 
 bool FileStream::getNALUnitHead(std::vector<uint8_t>& buffer, uint8_t& startCode)
 {
+    if (m_reachEOF) {
+        return false;
+    }
     bool isFound = false;
     bool info3 = false;
     bool info4 = false;
@@ -99,8 +105,9 @@ bool FileStream::getNALUnitHead(std::vector<uint8_t>& buffer, uint8_t& startCode
         }
     }
     if (m_fp.eof()) {
-        //×îºóÒ»¸öNALUnit
+        //æœ€åä¸€ä¸ªNALUnit
         startCode = 0;
+        m_reachEOF = true;
         return true;
     }
     return true;
